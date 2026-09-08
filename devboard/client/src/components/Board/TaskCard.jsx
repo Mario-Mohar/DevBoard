@@ -160,6 +160,16 @@ const TaskCard = ({
 
 const age = getTaskAge(task.createdAt);
 
+// --- Stale task warning (issue: warn when a task has been "in progress" 7+ days with no update) ---
+const getDaysSinceUpdate = (updatedAt) => {
+  if (!updatedAt) return 0;
+  return Math.floor((Date.now() - new Date(updatedAt)) / 86400000);
+};
+
+const isStale =
+  task.status === "inprogress" && getDaysSinceUpdate(task.updatedAt) >= 7;
+// ---------------------------------------------------------------------------------
+
 const estimatedPomodoros = estimateToPomodoros(task.estimate);
 const actualPomodoros = task.pomodoroCount || 0;
 
@@ -448,6 +458,15 @@ const actualPomodoros = task.pomodoroCount || 0;
                 🕰️ {age}d old
             </span>
           )}
+
+          {isStale && (
+  <span
+    className="mt-1 text-[10px] flex items-center gap-1.5 text-amber-400"
+    title={`No update in ${getDaysSinceUpdate(task.updatedAt)} days`}
+  >
+    ⚠️ stale
+  </span>
+)}
 
           {/* Footer */}
           <div className="flex items-center justify-between mt-2">
