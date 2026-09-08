@@ -61,6 +61,17 @@ const Dashboard = () => {
     document.title = "Dashboard — DevBoard";
   }, []);
 
+  useEffect(() => {
+  const handler = (e) => {
+    if (e.target.matches('input, textarea')) return;
+    if (e.key === 's' || e.key === 'S') {
+      setShowActivity(v => !v);
+    }
+  };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
  useEffect(() => {
   const handleBeforeInstallPrompt = (event) => {
     event.preventDefault();
