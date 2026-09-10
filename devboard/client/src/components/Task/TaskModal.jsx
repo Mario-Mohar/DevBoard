@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
 import { useBoard } from "../../context/BoardContext";
 import { QRCodeSVG } from "qrcode.react";
@@ -48,6 +48,45 @@ const TaskModal = ({
       t.title?.toLowerCase().trim() === form.title.toLowerCase().trim() &&
       t._id !== task?._id,
   );
+  // Tags are stored the way they were typed, so the list keeps the first
+  // spelling it sees and matches case insensitively: typing "rea" should still
+  // find an existing "React" rather than nothing.
+  const existingTags = useMemo(() => {
+    const firstSpelling = new Map();
+    (allTasks || []).forEach((t) => {
+      (t.tags || []).forEach((tag) => {
+        const key = tag.toLowerCase();
+        if (!firstSpelling.has(key)) firstSpelling.set(key, tag);
+      });
+    });
+    return [...firstSpelling.values()];
+  }, [allTasks]);
+
+  const tagSegments = form.tags.split(",");
+  const typedTag = tagSegments[tagSegments.length - 1].trim().toLowerCase();
+  const chosenTags = new Set(
+    tagSegments
+      .slice(0, -1)
+      .map((t) => t.trim().toLowerCase())
+      .filter(Boolean),
+  );
+  const tagSuggestions = typedTag
+    ? existingTags
+        .filter((tag) => {
+          const key = tag.toLowerCase();
+          return (
+            key.includes(typedTag) && key !== typedTag && !chosenTags.has(key)
+          );
+        })
+        .slice(0, 6)
+    : [];
+
+  const applyTagSuggestion = (tag) => {
+    const segments = form.tags.split(",").map((t) => t.trim());
+    segments[segments.length - 1] = tag;
+    setForm({ ...form, tags: `${segments.filter(Boolean).join(", ")}, ` });
+  };
+
   const [snippetCode, setSnippetCode] = useState("");
   const [snippetLang, setSnippetLang] = useState("javascript");
   const [loading, setLoading] = useState(false);
@@ -358,6 +397,22 @@ const TaskModal = ({
             onChange={(e) => setForm({ ...form, tags: e.target.value })}
             className="w-full bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-purple-500"
           />
+
+          {tagSuggestions.length > 0 && (
+            <div className="flex gap-1 flex-wrap -mt-1">
+              {tagSuggestions.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => applyTagSuggestion(tag)}
+                  title={`Use the existing tag ${tag}`}
+                  className="text-[10px] px-2 py-0.5 bg-[var(--bg-muted)] text-[var(--text-secondary)] rounded-full hover:text-purple-400 transition"
+                >
+                  + {tag}
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="flex gap-2">
             <input
