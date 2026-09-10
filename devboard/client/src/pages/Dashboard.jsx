@@ -14,6 +14,30 @@ const formatStars = (n) => {
 
 
 
+const CSV_HEADERS = ["Title", "Status", "Priority", "Tags", "Created"];
+
+// Excel and Sheets treat a leading =, +, - or @ as the start of a formula, so a
+// task titled "=HYPERLINK(...)" would run instead of being read. A leading
+// quote keeps the text visible and defuses it. Doubling the inner quotes is
+// what RFC 4180 asks for: without it a title containing " ends the field early
+// and the rest of the row slides into the wrong columns.
+const escapeCsvValue = (value) => {
+  const text = value === null || value === undefined ? "" : String(value);
+  const guarded = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+  return `"${guarded.replace(/"/g, '""')}"`;
+};
+
+const toCsv = (rows) =>
+  rows.map((row) => row.map(escapeCsvValue).join(",")).join("\r\n");
+
+// toLocaleDateString gives a different order on every machine and Excel guesses
+// at it. An ISO date is read the same way everywhere.
+const formatCsvDate = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
+};
+
 const isNightTime = () => {
   const hour = new Date().getHours();
   return hour >= 18 || hour < 6;
@@ -277,6 +301,28 @@ const Dashboard = () => {
     window.print();
   };
 
+  const handleExportCSV = () => {
+    const rows = tasks.map((t) => [
+      t.title,
+      t.status,
+      t.priority,
+      t.tags?.join("; ") || "",
+      formatCsvDate(t.createdAt),
+    ]);
+    // The BOM is what makes Excel open the file as UTF-8. Without it every
+    // umlaut and emoji in a task title arrives mangled.
+    const csv = `\uFEFF${toCsv([CSV_HEADERS, ...rows])}`;
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `devboard-tasks-${formatCsvDate(Date.now())}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div
       className="flex flex-col h-screen transition-colors duration-300"
@@ -346,6 +392,16 @@ const Dashboard = () => {
           )}
         </div>
         <div className="flex items-center gap-3 no-print">
+          <button
+            type="button"
+            onClick={handleExportCSV}
+            title={`Export the ${tasks.length} ${
+              tasks.length === 1 ? "task" : "tasks"
+            } currently on the board as CSV`}
+            className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition px-3 py-1.5 border border-[var(--border-primary)] rounded-lg"
+          >
+            📊 Export CSV
+          </button>
           <button
             type="button"
             onClick={handlePrint}
