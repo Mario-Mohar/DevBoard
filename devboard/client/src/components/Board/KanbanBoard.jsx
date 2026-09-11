@@ -7,6 +7,15 @@ import confetti from "canvas-confetti";
 
 const COLUMNS = ["backlog", "inprogress", "review", "done"];
 
+const DEV_QUOTES = [
+  "It works on my machine 🤷",
+  "Have you tried turning it off and on again? 💻",
+  "Fix one bug, create three more 🐛",
+  "Code never lies, comments sometimes do 📝",
+  "It's not a bug, it's a feature ✨",
+  "Works fine in production... said no one 😅",
+];
+
 const KanbanBoard = ({
   tasks: filteredTasks,
   onSelectTask,
@@ -16,6 +25,8 @@ const KanbanBoard = ({
 }) => {
   const { tasks, updateTask, addTask, loading } = useBoard();
   const displayedTasks = filteredTasks ?? tasks;
+  const quote =
+    DEV_QUOTES[Math.floor(Math.random() * DEV_QUOTES.length)];
 
   const [modalOpen, setModalOpen] = useState(false);
   const [defaultStatus, setDefaultStatus] = useState("backlog");
@@ -260,6 +271,10 @@ const KanbanBoard = ({
 
               <p className="text-sm text-[var(--text-muted)] mb-6">
                 Create your first task to get started
+              </p>
+
+              <p className="text-sm italic text-[var(--text-secondary)] mb-6">
+                {quote}
               </p>
 
               <button
