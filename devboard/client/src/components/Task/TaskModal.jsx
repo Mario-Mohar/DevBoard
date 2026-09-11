@@ -299,7 +299,7 @@ const TaskModal = ({
               setForm({ ...form, title: e.target.value });
               if (aiError) setAiError("");
             }}
-            className="w-full bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-purple-500"
+            className="w-full bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]"
           />
           <div className="text-xs text-[var(--text-muted)] text-right -mt-2">
             {form.title.length}/{TITLE_MAX_LENGTH}
@@ -320,7 +320,7 @@ const TaskModal = ({
                 type="button"
                 onClick={handleGenerateAI}
                 disabled={isGenerating || !form.title.trim()}
-                className="text-xs font-medium text-purple-400 hover:text-purple-300 disabled:opacity-40 transition flex items-center gap-1 bg-purple-950/40 border border-purple-800/50 hover:border-purple-600 px-2.5 py-1 rounded-md"
+                className="text-xs font-medium text-[var(--accent)] hover:brightness-125 disabled:opacity-40 transition flex items-center gap-1 bg-[var(--accent-10)] border border-[var(--accent-20)] hover:border-[var(--accent)] px-2.5 py-1 rounded-md"
               >
                 {isGenerating ? "✨ Generating..." : "✨ Generate with AI"}
               </button>
@@ -333,7 +333,7 @@ const TaskModal = ({
                 setForm({ ...form, description: e.target.value })
               }
               rows={3}
-              className="w-full bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-purple-500 resize-none"
+              className="w-full bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] resize-none"
             />
 
             <p className="text-[10px] text-[var(--text-secondary)] mt-1">
@@ -350,7 +350,7 @@ const TaskModal = ({
             <select
               value={form.status}
               onChange={(e) => setForm({ ...form, status: e.target.value })}
-              className="flex-1 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-purple-500"
+              className="flex-1 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
             >
               <option value="backlog">Backlog</option>
               <option value="inprogress">In Progress</option>
@@ -361,7 +361,7 @@ const TaskModal = ({
             <select
               value={form.priority}
               onChange={(e) => setForm({ ...form, priority: e.target.value })}
-              className="flex-1 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-purple-500"
+              className="flex-1 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
             >
               <option value="low">Low Priority</option>
               <option value="medium">Medium Priority</option>
@@ -395,7 +395,7 @@ const TaskModal = ({
             placeholder="Tags (comma separated: react, api, bug)"
             value={form.tags}
             onChange={(e) => setForm({ ...form, tags: e.target.value })}
-            className="w-full bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-purple-500"
+            className="w-full bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]"
           />
 
           {tagSuggestions.length > 0 && (
@@ -406,7 +406,7 @@ const TaskModal = ({
                   type="button"
                   onClick={() => applyTagSuggestion(tag)}
                   title={`Use the existing tag ${tag}`}
-                  className="text-[10px] px-2 py-0.5 bg-[var(--bg-muted)] text-[var(--text-secondary)] rounded-full hover:text-purple-400 transition"
+                  className="text-[10px] px-2 py-0.5 bg-[var(--bg-muted)] text-[var(--text-secondary)] rounded-full hover:text-[var(--accent)] transition"
                 >
                   + {tag}
                 </button>
@@ -422,7 +422,7 @@ const TaskModal = ({
               onChange={(e) =>
                 setForm({ ...form, githubIssueUrl: e.target.value })
               }
-              className="flex-1 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-purple-500"
+              className="flex-1 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]"
             />
             <input
               type="number"
@@ -431,7 +431,7 @@ const TaskModal = ({
               onChange={(e) =>
                 setForm({ ...form, githubIssueNumber: e.target.value })
               }
-              className="w-16 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-purple-500"
+              className="w-16 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]"
             />
           </div>
 
@@ -517,13 +517,13 @@ const TaskModal = ({
             type="date"
             value={form.dueDate}
             onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
-            className="w-full bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-purple-500"
+            className="w-full bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
           />
 
           <select
             value={form.estimate || ""}
             onChange={(e) => setForm({ ...form, estimate: e.target.value })}
-            className="w-full bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-purple-500"
+            className="w-full bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
           >
             <option value="">No estimate</option>
             <option value="30m">30 minutes</option>
@@ -563,7 +563,7 @@ const TaskModal = ({
               <button
                 onClick={handleExportJSON}
                 title="Export as JSON"
-                className="p-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 rounded-lg transition outline-none focus-visible:ring-2 focus-visible:ring-purple-500/50"
+                className="p-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 rounded-lg transition outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
               >
                 📤
               </button>
@@ -573,7 +573,7 @@ const TaskModal = ({
                 onClick={handleDuplicate}
                 disabled={duplicating || !form.title.trim()}
                 title="Duplicate task"
-                className="p-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 rounded-lg transition outline-none focus-visible:ring-2 focus-visible:ring-purple-500/50 disabled:opacity-40"
+                className="p-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 rounded-lg transition outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-40"
               >
                 📄
               </button>
@@ -597,7 +597,7 @@ const TaskModal = ({
                   toast.success("Share link copied to clipboard");
                 }}
                 title="Copy share link"
-                className="p-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 rounded-lg transition outline-none focus-visible:ring-2 focus-visible:ring-purple-500/50"
+                className="p-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 rounded-lg transition outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
               >
                 🔗
               </button>
@@ -643,7 +643,7 @@ const TaskModal = ({
             <button
               onClick={handleSave}
               disabled={loading || !form.title.trim() || isDuplicate}
-              className="shrink-0 whitespace-nowrap px-5 py-2 text-sm bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-medium transition disabled:opacity-40"
+              className="shrink-0 whitespace-nowrap px-5 py-2 text-sm bg-[var(--accent)] hover:brightness-110 text-white rounded-lg font-medium transition disabled:opacity-40"
             >
               {loading
                 ? "Saving..."

@@ -22,15 +22,18 @@ const TaskPage = () => {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-[var(--bg-primary)] text-center p-8">
         <span className="text-6xl mb-4">🔍</span>
+
         <h2 className="text-2xl font-semibold text-[var(--text-primary)] mb-2">
           Task not found
         </h2>
+
         <p className="text-[var(--text-secondary)] mb-6">
           It may have been deleted, or you don't have access.
         </p>
+
         <button
           onClick={() => navigate("/")}
-          className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2.5 rounded-lg font-medium transition"
+          className="bg-[var(--accent)] hover:brightness-110 text-white px-6 py-2.5 rounded-lg font-medium transition"
         >
           Back to Dashboard
         </button>

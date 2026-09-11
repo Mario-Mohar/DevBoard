@@ -58,10 +58,13 @@ const handleInstallApp = async () => {
 
 const THEMES = {
   purple: { name: "Purple", accent: "#7F77DD", bg: "#0f0f10" },
-  ocean:  { name: "Ocean",  accent: "#2980B9", bg: "#0a0f14" },
+  rose:   { name: "Rose",   accent: "#E85D75", bg: "#140a0d" },
   forest: { name: "Forest", accent: "#27AE60", bg: "#0a110a" },
-  sunset: { name: "Sunset", accent: "#E67E22", bg: "#140a0a" },
   gold:   { name: "Gold",   accent: "#F39C12", bg: "#111009" },
+  ocean:  { name: "Ocean",  accent: "#2980B9", bg: "#0a0f14" },
+  red:    { name: "Red",    accent: "#E74C3C", bg: "#140a0a" },
+  teal:   { name: "Teal",   accent: "#1ABC9C", bg: "#081211" },
+  sunset: { name: "Sunset", accent: "#E67E22", bg: "#140d08" },
 };
 
 const Dashboard = () => {
@@ -155,11 +158,17 @@ const Dashboard = () => {
     document.documentElement.style.backgroundColor = activeTheme.bg;
 
     document.documentElement.style.setProperty("--accent", activeTheme.accent);
+    document.documentElement.style.setProperty("--accent-10", `${activeTheme.accent}1A`);
+    document.documentElement.style.setProperty("--accent-15", `${activeTheme.accent}26`);
+    document.documentElement.style.setProperty("--accent-20", `${activeTheme.accent}33`);
+    document.documentElement.style.setProperty("--accent-30", `${activeTheme.accent}4D`);
+    document.documentElement.style.setProperty("--accent-40", `${activeTheme.accent}66`);
     document.documentElement.style.setProperty("--bg", activeTheme.bg);
     document.documentElement.style.setProperty("--bg-primary", activeTheme.bg);
     document.documentElement.style.setProperty("--bg-card", activeTheme.bg);
 
     localStorage.setItem("board_theme", JSON.stringify(theme));
+    localStorage.setItem("accent_color", activeTheme.accent);
   }, [theme, activeTheme]);
 
   const handleCustomColorChange = (key, value) => {
@@ -332,7 +341,7 @@ const Dashboard = () => {
 {deferredPrompt && (
   <button
     onClick={handleInstallApp}
-    className="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition"
+    className="px-4 py-2 rounded-lg bg-[var(--accent)] text-white hover:brightness-110 transition"
   >
     Install App
   </button>
@@ -344,10 +353,10 @@ const Dashboard = () => {
       >
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-lg">🗂️</span>
-          <span className="font-semibold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+          <span className="font-semibold text-[var(--accent)]">
             DevBoard
           </span>
-          <span className="text-xs bg-purple-600/20 text-purple-400 px-2 py-0.5 rounded-full ml-1">
+          <span className="text-xs bg-[var(--accent-20)] text-[var(--accent)] px-2 py-0.5 rounded-full ml-1">
             beta
           </span>
           <span className="text-xs text-[var(--text-secondary)] ml-2">
@@ -356,7 +365,7 @@ const Dashboard = () => {
           {activeTag && (
             <button
               onClick={() => setActiveTag(null)}
-              className="text-xs bg-purple-600/30 text-purple-300 px-2 py-0.5 rounded-full flex items-center gap-1 hover:bg-purple-600/40 transition"
+              className="text-xs bg-[var(--accent-30)] text-[var(--accent)] px-2 py-0.5 rounded-full flex items-center gap-1 hover:bg-[var(--accent-40)] transition"
             >
               #{activeTag} <span aria-hidden>✕</span>
             </button>
@@ -373,7 +382,7 @@ const Dashboard = () => {
               }}
               onBlur={() => handleSearch(searchQuery)}
               placeholder="Search tasks by title or tag..."
-              className="w-full bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/15 transition"
+              className="w-full bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-xl px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-15)] transition"
             />
           </label>
           {searchHistory.length > 0 && (
@@ -383,7 +392,7 @@ const Dashboard = () => {
                   key={h}
                   type="button"
                   onClick={() => handleSearch(h)}
-                  className="text-[10px] text-[var(--text-muted)] hover:text-purple-400 px-2 py-0.5 bg-[var(--bg-muted)] rounded-full transition"
+                  className="text-[10px] text-[var(--text-muted)] hover:text-[var(--accent)] px-2 py-0.5 bg-[var(--bg-muted)] rounded-full transition"
                 >
                   🕐 {h}
                 </button>
@@ -435,7 +444,7 @@ const Dashboard = () => {
             aria-label={focusMode ? "Disable focus mode" : "Enable focus mode"}
             className={`text-xs px-3 py-1.5 rounded-lg border transition ${
               focusMode
-                ? "border-purple-500 text-purple-400 bg-purple-500/10"
+                ? "border-[var(--accent)] text-[var(--accent)] bg-[var(--accent-10)]"
                 : "border-[var(--border-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
@@ -459,7 +468,7 @@ const Dashboard = () => {
             onClick={() => setShowHelp((v) => !v)}
             aria-label="Keyboard shortcuts help"
             title="Keyboard shortcuts (?)"
-            className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-muted)] px-2 py-1 border border-[var(--border-primary)] rounded-lg focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition"
+            className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-muted)] px-2 py-1 border border-[var(--border-primary)] rounded-lg focus:outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-20)] transition"
           >
             ⌨️ ?
           </button>
