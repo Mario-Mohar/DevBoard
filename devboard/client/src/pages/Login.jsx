@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom"; // <-- 1. Import useNavigate
+import { useNavigate } from "react-router-dom";
 import { useBoard } from "../context/BoardContext";
 
 const Login = () => {
   const { login } = useBoard();
-  const navigate = useNavigate(); // <-- 2. Initialize navigate hook
+  const navigate = useNavigate();
   const [fade, setFade] = useState(true);
 
   useEffect(() => {
@@ -13,7 +13,11 @@ const Login = () => {
   }, []);
 
   const [isRegister, setIsRegister] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,10 +26,17 @@ const Login = () => {
   const handleSubmit = async () => {
     setError("");
 
-    if (isRegister && !form.name.trim()) return setError("Name is required");
-    if (!form.email.includes("@")) return setError("Enter a valid email");
-    if (form.password.length < 6)
+    if (isRegister && !form.name.trim()) {
+      return setError("Name is required");
+    }
+
+    if (!form.email.includes("@")) {
+      return setError("Enter a valid email");
+    }
+
+    if (form.password.length < 6) {
       return setError("Password must be at least 6 characters");
+    }
 
     if (!form.email || !form.password || (isRegister && !form.name)) {
       setError("Please fill in all required fields");
@@ -33,8 +44,11 @@ const Login = () => {
     }
 
     setLoading(true);
+
     try {
-      const endpoint = isRegister ? "/api/v1/auth/register" : "/api/v1/auth/login";
+      const endpoint = isRegister
+        ? "/api/v1/auth/register"
+        : "/api/v1/auth/login";
 
       const payload = isRegister
         ? {
@@ -42,7 +56,10 @@ const Login = () => {
             email: form.email.trim(),
             password: form.password,
           }
-        : { email: form.email.trim(), password: form.password };
+        : {
+            email: form.email.trim(),
+            password: form.password,
+          };
 
       const { data } = await axios.post(endpoint, payload);
 
@@ -55,12 +72,14 @@ const Login = () => {
           if (login) {
             login(data);
           }
+
           navigate("/", { replace: true });
         }, 2000);
       } else {
         if (login) {
           login(data);
         }
+
         navigate("/", { replace: true });
       }
     } catch (err) {
@@ -76,6 +95,7 @@ const Login = () => {
 
   const toggleMode = () => {
     setFade(false);
+
     setTimeout(() => {
       setIsRegister((prev) => !prev);
       setError("");
@@ -85,11 +105,16 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[var(--bg-primary)] via-[var(--bg-accent)] to-[var(--bg-primary)] flex items-center justify-center p-4 relative overflow-hidden">
-      <div className="absolute w-72 h-72 bg-purple-600/10 rounded-full blur-3xl top-1/4 left-1/2 -translate-x-1/2" />
+      <div className="absolute w-72 h-72 bg-[var(--accent-10,#7F77DD1A)] rounded-full blur-3xl top-1/4 left-1/2 -translate-x-1/2" />
+
       <div className="w-full max-w-sm relative">
         <div className="text-center mb-8">
           <div className="text-4xl mb-2">🗂️</div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)]">DevBoard</h1>
+
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]">
+            DevBoard
+          </h1>
+
           <p className="text-[var(--text-secondary)] text-sm mt-1">
             Kanban built for developers
           </p>
@@ -105,8 +130,13 @@ const Login = () => {
               type="text"
               placeholder="Your name *"
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-purple-500"
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  name: e.target.value,
+                })
+              }
+              className="w-full bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent,#7F77DD)]"
             />
           )}
 
@@ -114,8 +144,13 @@ const Login = () => {
             type="email"
             placeholder="Email *"
             value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
-            className="w-full bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-purple-500"
+            onChange={(e) =>
+              setForm({
+                ...form,
+                email: e.target.value,
+              })
+            }
+            className="w-full bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent,#7F77DD)]"
           />
 
           <div className="relative">
@@ -123,10 +158,18 @@ const Login = () => {
               type={show ? "text" : "password"}
               placeholder="Password *"
               value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-              className="w-full bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2.5 pr-10 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-purple-500"
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  password: e.target.value,
+                })
+              }
+              onKeyDown={(e) =>
+                e.key === "Enter" && handleSubmit()
+              }
+              className="w-full bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2.5 pr-10 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent,#7F77DD)]"
             />
+
             <button
               type="button"
               onClick={() => setShow((prev) => !prev)}
@@ -136,16 +179,22 @@ const Login = () => {
             </button>
           </div>
 
-          {error && <p className="text-red-400 text-xs">{error}</p>}
+          {error && (
+            <p className="text-red-400 text-xs">
+              {error}
+            </p>
+          )}
 
           {success && (
-            <p className="text-green-400 text-xs text-center">{success}</p>
+            <p className="text-green-400 text-xs text-center">
+              {success}
+            </p>
           )}
 
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="w-full py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm font-medium transition disabled:opacity-40"
+            className="w-full py-2.5 bg-[var(--accent,#7F77DD)] hover:brightness-110 text-white rounded-lg text-sm font-medium transition disabled:opacity-40"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
@@ -162,13 +211,17 @@ const Login = () => {
                     stroke="currentColor"
                     strokeWidth="4"
                   />
+
                   <path
                     className="opacity-75"
                     fill="currentColor"
                     d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                   />
                 </svg>
-                {isRegister ? "Creating Account..." : "Signing in..."}
+
+                {isRegister
+                  ? "Creating Account..."
+                  : "Signing in..."}
               </span>
             ) : isRegister ? (
               "Create Account"
@@ -180,7 +233,10 @@ const Login = () => {
           {isRegister && (
             <p className="text-[10px] text-[var(--text-muted)] text-center leading-snug">
               By creating an account you agree to our{" "}
-              <a href="#" className="text-purple-400 hover:underline">
+              <a
+                href="#"
+                className="text-[var(--accent,#7F77DD)] hover:underline"
+              >
                 Terms of Service
               </a>
             </p>

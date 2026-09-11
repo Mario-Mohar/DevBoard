@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+
 import { Draggable } from "@hello-pangea/dnd";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus, vs } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -18,7 +18,7 @@ const GLOW = {
 };
 
 const TAG_COLORS = [
-  "bg-purple-500/20 text-purple-400",
+  "bg-[var(--accent-20)] text-[var(--accent)]",
   "bg-blue-500/20 text-blue-400",
   "bg-green-500/20 text-green-400",
   "bg-red-500/20 text-red-400",
@@ -30,7 +30,7 @@ const getTagColor = (tag) =>
   TAG_COLORS[tag.charCodeAt(0) % TAG_COLORS.length];
 
 const AVATAR_COLORS = [
-  "bg-purple-700",
+  "bg-[var(--accent)]",
   "bg-blue-600",
   "bg-green-600",
   "bg-rose-600",
@@ -61,7 +61,7 @@ const highlightMatch = (text, query) => {
     part.toLowerCase() === term.toLowerCase() ? (
       <mark
         key={i}
-        className="bg-purple-500/30 text-purple-300 rounded px-0.5"
+        className="bg-[var(--accent-30)] text-[var(--accent)] rounded px-0.5"
       >
         {part}
       </mark>
@@ -222,8 +222,8 @@ const actualPomodoros = task.pomodoroCount || 0;
               : {}),
           }}
           className={`card group bg-[var(--bg-card)] border rounded-lg p-3 cursor-pointer transition-all
-            hover:shadow-lg ${GLOW[task.priority] || "hover:shadow-purple-500/20"}
-            ${snapshot.isDragging ? "border-purple-500 shadow-lg shadow-purple-500/10" : isOverdue
+            hover:shadow-lg ${GLOW[task.priority] || "hover:shadow-[var(--accent-20)]"}
+            ${snapshot.isDragging ? "border-[var(--accent)] shadow-lg shadow-[var(--accent-10)]" : isOverdue
               ? "border-red-500 border-l-4 hover:border-red-400" : "border-[var(--border-primary)] hover:border-[var(--border-hover)]"}`}
         >
          
@@ -235,7 +235,7 @@ const actualPomodoros = task.pomodoroCount || 0;
                 checked={selected}
                 onChange={() => onToggleSelect(task._id)}
                 onClick={(e) => e.stopPropagation()}
-                className="accent-purple-500 shrink-0 mt-0.5 cursor-pointer"
+                className="accent-[var(--accent)] shrink-0 mt-0.5 cursor-pointer"
               />
             )}
 
@@ -292,7 +292,7 @@ const actualPomodoros = task.pomodoroCount || 0;
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="flex items-center gap-1 text-[10px] text-[var(--text-secondary)] hover:text-purple-400 mb-2"
+              className="flex items-center gap-1 text-[10px] text-[var(--text-secondary)] hover:text-[var(--accent)] mb-2"
             >
               <span>🔗</span> #{task.githubIssueNumber} GitHub Issue
             </a>
@@ -307,7 +307,7 @@ const actualPomodoros = task.pomodoroCount || 0;
                     e.stopPropagation();
                     setExpanded((v) => !v);
                   }}
-                  className="text-[10px] text-purple-400 hover:text-purple-300 mb-1"
+                  className="text-[10px] text-[var(--accent)] hover:brightness-125 mb-1"
                 >
                   {"</>"} {task.snippets.length} snippet
                   {task.snippets.length > 1 ? "s" : ""} {expanded ? "▲" : "▼"}
@@ -316,7 +316,7 @@ const actualPomodoros = task.pomodoroCount || 0;
                 <button
                   onClick={handleSuggestTags}
                   disabled={loadingTags}
-                  className="text-[10px] px-2 py-1 rounded bg-purple-600 text-white hover:bg-purple-700"
+                  className="text-[10px] px-2 py-1 rounded bg-[var(--accent)] text-white hover:brightness-110"
                 >
                   {loadingTags ? "Loading..." : "Suggest tags"}
                 </button>
@@ -347,7 +347,7 @@ const actualPomodoros = task.pomodoroCount || 0;
                         e.stopPropagation();
                         handleAddTag(tag);
                       }}
-                      className="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/40 hover:bg-purple-500/40"
+                      className="text-[10px] px-2 py-0.5 rounded bg-[var(--accent-20)] text-[var(--accent)] border border-[var(--accent-40)] hover:bg-[var(--accent-40)]"
                     >
                       + {tag}
                     </button>
@@ -367,7 +367,7 @@ const actualPomodoros = task.pomodoroCount || 0;
                           task.snippets[selectedSnippet].code
                         );
                       }}
-                      className="text-[10px] px-2 py-1 rounded bg-purple-600 text-white hover:bg-purple-700"
+                      className="text-[10px] px-2 py-1 rounded bg-[var(--accent)] text-white hover:brightness-110"
                     >
                       Copy
                     </button>
@@ -417,7 +417,7 @@ const actualPomodoros = task.pomodoroCount || 0;
                   className={`text-[10px] px-1.5 py-0.5 rounded cursor-pointer transition
                     ${getTagColor(tag)}
                     ${activeTag === tag
-                      ? "ring-1 ring-purple-500"
+                      ? "ring-1 ring-[var(--accent)]"
                       : "hover:brightness-125"
                     }`}
                 >

@@ -7,18 +7,24 @@ import confetti from "canvas-confetti";
 
 const COLUMNS = ["backlog", "inprogress", "review", "done"];
 
-
-const KanbanBoard = ({ tasks: filteredTasks, onSelectTask, activeCol, priorityFilter = "all", focusMode = false }) => {
-
+const KanbanBoard = ({
+  tasks: filteredTasks,
+  onSelectTask,
+  activeCol,
+  priorityFilter = "all",
+  focusMode = false,
+}) => {
   const { tasks, updateTask, addTask, loading } = useBoard();
   const displayedTasks = filteredTasks ?? tasks;
+
   const [modalOpen, setModalOpen] = useState(false);
   const [defaultStatus, setDefaultStatus] = useState("backlog");
 
   const [columns, setColumns] = useState(() => {
-      const saved = localStorage.getItem("columns");
-      return saved ? JSON.parse(saved) : COLUMNS;
-});
+    const saved = localStorage.getItem("columns");
+    return saved ? JSON.parse(saved) : COLUMNS;
+  });
+
   const [showinput, setShowinput] = useState(false);
   const [columnName, setColumnName] = useState("");
 
@@ -29,7 +35,7 @@ const KanbanBoard = ({ tasks: filteredTasks, onSelectTask, activeCol, priorityFi
       inputRef.current?.focus();
     }
   }, [showinput]);
-  
+
   useEffect(() => {
     const handler = (e) => {
       if (e.key.toLowerCase() === "n" && !e.target.matches("input, textarea")) {
@@ -37,25 +43,32 @@ const KanbanBoard = ({ tasks: filteredTasks, onSelectTask, activeCol, priorityFi
         setModalOpen(true);
       }
     };
+
     window.addEventListener("keydown", handler);
+
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
   const getTasksByStatus = (status) =>
-
     displayedTasks
       .filter((t) => t.status === status)
-      .filter((t) => priorityFilter === "all" || t.priority?.toLowerCase() === priorityFilter)
+      .filter(
+        (t) =>
+          priorityFilter === "all" ||
+          t.priority?.toLowerCase() === priorityFilter
+      )
       .sort((a, b) => a.order - b.order);
-
-  
 
   const visibleColumns = focusMode
     ? columns.filter((col) => col.toLowerCase() !== "done")
     : columns;
 
-  const isEmpty = visibleColumns.every(col => getTasksByStatus(col).length === 0);
+  const isEmpty = visibleColumns.every(
+    (col) => getTasksByStatus(col).length === 0
+  );
+
   const totalTasks = tasks.length;
+
   const playDoneSound = () => {
     const AudioContextClass =
       window.AudioContext || window.webkitAudioContext;
@@ -89,7 +102,6 @@ const KanbanBoard = ({ tasks: filteredTasks, onSelectTask, activeCol, priorityFi
 
     if (!destination) return;
 
-    // Dropped in the same place — nothing to do
     if (
       destination.droppableId === source.droppableId &&
       destination.index === source.index
@@ -102,34 +114,38 @@ const KanbanBoard = ({ tasks: filteredTasks, onSelectTask, activeCol, priorityFi
       source.droppableId !== "done"
     ) {
       confetti({ particleCount: 100, spread: 70 });
-       playDoneSound();
+      playDoneSound();
     }
 
-    const sourceTasks = Array.from(getTasksByStatus(source.droppableId));
+    const sourceTasks = Array.from(
+      getTasksByStatus(source.droppableId)
+    );
+
     const destTasks =
       source.droppableId === destination.droppableId
         ? sourceTasks
         : Array.from(getTasksByStatus(destination.droppableId));
 
-    // Prefer the task at source.index; fall back to draggableId
-    const idMatch = (task) => String(task._id) === String(draggableId);
-    let moved =
-      sourceTasks[source.index] && idMatch(sourceTasks[source.index])
+    const idMatch = (task) =>
+      String(task._id) === String(draggableId);
+
+    const moved =
+      sourceTasks[source.index] &&
+      idMatch(sourceTasks[source.index])
         ? sourceTasks[source.index]
         : sourceTasks.find(idMatch) || tasks.find(idMatch);
 
     if (!moved) return;
 
-    // Remove from source column list
     const sourceIndex = sourceTasks.findIndex(
-      (t) => String(t._id) === String(moved._id),
+      (t) => String(t._id) === String(moved._id)
     );
+
     if (sourceIndex !== -1) {
       sourceTasks.splice(sourceIndex, 1);
     }
 
     if (source.droppableId === destination.droppableId) {
-      // Same-column reorder
       sourceTasks.splice(destination.index, 0, moved);
 
       await Promise.all(
@@ -137,32 +153,31 @@ const KanbanBoard = ({ tasks: filteredTasks, onSelectTask, activeCol, priorityFi
           updateTask(task._id, {
             status: source.droppableId,
             order: index,
-          }),
-        ),
+          })
+        )
       );
+
       return;
     }
 
-    // Cross-column move: insert into destination with new status
     destTasks.splice(destination.index, 0, {
       ...moved,
       status: destination.droppableId,
     });
 
     await Promise.all([
-      // Re-order remaining tasks in the source column
       ...sourceTasks.map((task, index) =>
         updateTask(task._id, {
           status: source.droppableId,
           order: index,
-        }),
+        })
       ),
-      // Assign moved task + reorder destination column
+
       ...destTasks.map((task, index) =>
         updateTask(task._id, {
           status: destination.droppableId,
           order: index,
-        }),
+        })
       ),
     ]);
   };
@@ -184,8 +199,8 @@ const KanbanBoard = ({ tasks: filteredTasks, onSelectTask, activeCol, priorityFi
   };
 
   useEffect(() => {
-  localStorage.setItem("columns", JSON.stringify(columns));
-   }, [columns]);
+    localStorage.setItem("columns", JSON.stringify(columns));
+  }, [columns]);
 
   return (
     <>
@@ -194,8 +209,8 @@ const KanbanBoard = ({ tasks: filteredTasks, onSelectTask, activeCol, priorityFi
           className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50"
           onClick={handleCancel}
           onKeyDown={(e) => {
-            if (e.key === 'Escape') handleCancel();
-            if (e.key === 'Enter' && columnName.trim()) handleSubmit();
+            if (e.key === "Escape") handleCancel();
+            if (e.key === "Enter" && columnName.trim()) handleSubmit();
           }}
         >
           <div
@@ -208,8 +223,9 @@ const KanbanBoard = ({ tasks: filteredTasks, onSelectTask, activeCol, priorityFi
               placeholder="Enter column name"
               value={columnName}
               onChange={(e) => setColumnName(e.target.value)}
-              className="border border-[var(--border-primary)] rounded px-2 py-1 bg-[var(--bg-input)] text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:border-purple-500 focus:outline-none"
+              className="border border-[var(--border-primary)] rounded px-2 py-1 bg-[var(--bg-input)] text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:border-[var(--accent)] focus:outline-none"
             />
+
             <div className="flex justify-end gap-2 mt-4">
               <button
                 onClick={handleCancel}
@@ -217,9 +233,10 @@ const KanbanBoard = ({ tasks: filteredTasks, onSelectTask, activeCol, priorityFi
               >
                 Cancel
               </button>
+
               <button
                 onClick={handleSubmit}
-                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 bg-[var(--accent)] text-white rounded hover:brightness-110 focus:ring-2 focus:ring-[var(--accent)] disabled:opacity-50 disabled:cursor-not-allowed transition"
                 disabled={!columnName.trim()}
               >
                 Add
@@ -236,15 +253,18 @@ const KanbanBoard = ({ tasks: filteredTasks, onSelectTask, activeCol, priorityFi
               <div className="text-6xl animate-bounce mb-4">
                 🗂️
               </div>
+
               <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
                 Your board is empty!
               </h2>
+
               <p className="text-sm text-[var(--text-muted)] mb-6">
                 Create your first task to get started
               </p>
+
               <button
-                onClick={() => handleAddTask('backlog')}
-                className="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm font-medium transition"
+                onClick={() => handleAddTask("backlog")}
+                className="px-5 py-2 bg-[var(--accent)] hover:brightness-110 text-white rounded-lg text-sm font-medium transition"
               >
                 ✨ Create first task
               </button>
@@ -252,8 +272,14 @@ const KanbanBoard = ({ tasks: filteredTasks, onSelectTask, activeCol, priorityFi
           ) : isEmpty ? (
             <div className="flex flex-col items-center justify-center w-full h-64 text-gray-500">
               <span className="text-4xl mb-4">🔍</span>
-              <h3 className="text-xl font-semibold mb-2">No tasks found!</h3>
-              <p className="text-sm">Try a different filter or create a new task</p>
+
+              <h3 className="text-xl font-semibold mb-2">
+                No tasks found!
+              </h3>
+
+              <p className="text-sm">
+                Try a different filter or create a new task
+              </p>
             </div>
           ) : (
             <>
@@ -268,6 +294,7 @@ const KanbanBoard = ({ tasks: filteredTasks, onSelectTask, activeCol, priorityFi
                   columns={columns}
                 />
               ))}
+
               <button
                 className="flex no-print"
                 onClick={() => {
