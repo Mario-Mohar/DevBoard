@@ -91,6 +91,7 @@ const TaskModal = ({
   const [snippetLang, setSnippetLang] = useState("javascript");
   const [loading, setLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   // AI Loading & Error States
   const [isGenerating, setIsGenerating] = useState(false);
@@ -234,6 +235,26 @@ const TaskModal = ({
     } finally {
       setDuplicating(false);
     }
+  };
+
+  const handleSaveTemplate = () => {
+    const templates = JSON.parse(
+      localStorage.getItem("task_templates") || "[]",
+    );
+    const newTemplate = {
+      id: Date.now(),
+      name: form.title,
+      title: form.title,
+      description: form.description,
+      priority: form.priority,
+      tags: form.tags,
+    };
+    localStorage.setItem(
+      "task_templates",
+      JSON.stringify([...templates, newTemplate]),
+    );
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   };
 
   const handleClose = () => {
@@ -602,6 +623,15 @@ const TaskModal = ({
                 🔗
               </button>
             )}
+            <button
+              type="button"
+              onClick={handleSaveTemplate}
+              disabled={!form.title.trim()}
+              title={saved ? "Saved!" : "Save as reusable template"}
+              className="p-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 rounded-lg transition outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-40"
+            >
+              {saved ? "✅" : "💾"}
+            </button>
           </div>
 
           <div className="flex items-center flex-wrap justify-end gap-2">
