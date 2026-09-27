@@ -4,6 +4,12 @@ import { useBoard } from "../../context/BoardContext";
 import { QRCodeSVG } from "qrcode.react";
 
 const TITLE_MAX_LENGTH = 100;
+// The tags field holds the whole comma separated list, not one tag, so its
+// budget has to be sized for a list. The placeholder alone is 39 characters.
+// Other paths into the same field are not bound by it at all: the suggested
+// tags on the card write through updateTask and the GitHub import writes on
+// the server, and neither goes through this input.
+const TAGS_MAX_LENGTH = 120;
 // The AI generator asks Gemini for "2-3 sentences", which lands around 150 to
 // 400 characters. A budget has to hold that plus a note typed afterwards,
 // otherwise the field cuts off the text the button just produced.
@@ -463,7 +469,7 @@ const TaskModal = ({
 
           <input
             type="text"
-            maxLength={20}
+            maxLength={TAGS_MAX_LENGTH}
             placeholder="Tags (comma separated: react, api, bug)"
             value={form.tags}
             onChange={(e) => setForm({ ...form, tags: e.target.value })}
