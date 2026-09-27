@@ -110,6 +110,18 @@ const TaskCard = ({
   const [contextMenu, setContextMenu] = useState(null);
   const cardRef = useRef(null);
   const { activeTag, setActiveTag, updateTask, deleteTask, addTask, searchQuery } = useBoard();
+
+  // Why a badge and not highlightMatch as elsewhere: the snippet body is
+  // collapsed and syntax-highlighted, so there is nothing to mark up until the
+  // viewer is open. Without this, a card appears in the result with no visible
+  // reason why.
+  const snippetQuery = searchQuery?.trim().toLowerCase() || "";
+  const snippetMatches =
+    snippetQuery.length > 0 &&
+    (task.snippets?.some((snippet) =>
+      (snippet?.code || "").toLowerCase().includes(snippetQuery)
+    ) ??
+      false);
   const { suggestedTags, loadingTags, handleSuggestTags, handleAddTag } = useSuggestTags(task, selectedSnippet, updateTask);
   const [showPreview, setShowPreview] = useState(false);
 
@@ -341,6 +353,15 @@ const actualPomodoros = task.pomodoroCount || 0;
                   {"</>"} {task.snippets.length} snippet
                   {task.snippets.length > 1 ? "s" : ""} {expanded ? "▲" : "▼"}
                 </button>
+
+                {snippetMatches && (
+                  <span
+                    className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--accent-20)] text-[var(--accent)] border border-[var(--accent-40)]"
+                    title="The search term appears inside a code snippet of this task"
+                  >
+                    snippet match
+                  </span>
+                )}
 
                 <button
                   onClick={handleSuggestTags}
