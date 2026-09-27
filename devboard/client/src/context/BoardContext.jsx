@@ -223,13 +223,23 @@ export const BoardProvider = ({ children }) => {
       const tags = task.tags?.join(" ").toLowerCase() || "";
       const priority = task.priority?.toLowerCase() || "";
       const priorityText = priorityLabel(task.priority).toLowerCase();
+      // The snippets are the reason a task is often hard to find: their text is
+      // collapsed on the card, so it is the one place a search could not reach.
+      // Joined rather than checked one by one — a task matches or it does not,
+      // which snippet carried the hit is the card's business, not the filter's.
+      const snippets =
+        task.snippets
+          ?.map((snippet) => snippet?.code || "")
+          .join("\n")
+          .toLowerCase() || "";
 
       return (
         title.includes(query) ||
         description.includes(query) ||
         tags.includes(query) ||
         priority.includes(query) ||
-        priorityText.includes(query)
+        priorityText.includes(query) ||
+        snippets.includes(query)
       );
     });
   }, [allTasks, searchQuery, activeTag]);
