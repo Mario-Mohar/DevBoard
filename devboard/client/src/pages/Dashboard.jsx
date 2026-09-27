@@ -21,6 +21,7 @@ import {
   ChevronUpIcon,
   XIcon,
 } from "../components/common/Icons";
+import { openVisit, touchVisit, timeAgo } from "../utils/lastVisit";
 
 const formatStars = (n) => {
   if (n === null || n === undefined) return null;
@@ -85,6 +86,17 @@ const Dashboard = () => {
 
   useEffect(() => {
     document.title = "DevBoard — Developer Kanban";
+  }, []);
+
+  // Read once, before anything moves the stamps, so this holds the session
+  // before this one rather than the one that just started.
+  const [lastVisit] = useState(() => openVisit());
+
+  // Keep the board marked as seen while it is open, otherwise a long session
+  // would count as a gap the moment you reload at the end of it.
+  useEffect(() => {
+    const id = setInterval(touchVisit, 60 * 1000);
+    return () => clearInterval(id);
   }, []);
 
   const [focusMode, setFocusMode] = useState(false);
@@ -268,6 +280,14 @@ const Dashboard = () => {
           <span className="text-xs font-mono-code text-zinc-400">
             {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
           </span>
+          {lastVisit && (
+            <span
+              title={`You last opened this board on ${new Date(lastVisit).toLocaleString()}`}
+              className="text-xs font-mono-code text-zinc-500 no-print"
+            >
+              last visit {timeAgo(lastVisit)}
+            </span>
+          )}
 
           {activeTag && (
             <button
