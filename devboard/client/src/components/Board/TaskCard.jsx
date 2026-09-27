@@ -106,6 +106,9 @@ const TaskCard = ({
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [selectedSnippet, setSelectedSnippet] = useState(0);
+  // Per viewer, not global: one card can hold a wide table that needs wrapping
+  // while another holds code where wrapping would hide its shape.
+  const [wrapLines, setWrapLines] = useState(false);
   const [copied, setCopied] = useState(false);
   const [contextMenu, setContextMenu] = useState(null);
   const cardRef = useRef(null);
@@ -388,7 +391,26 @@ const actualPomodoros = task.pomodoroCount || 0;
               {/* Updated Snippet Block with Copy Button */}
               {expanded && (
                 <>
-                  <div className="flex justify-end mb-1">
+                  <div className="flex justify-end gap-1 mb-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setWrapLines((on) => !on);
+                      }}
+                      aria-pressed={wrapLines}
+                      title={
+                        wrapLines
+                          ? "Long lines wrap; click to scroll instead"
+                          : "Long lines scroll; click to wrap instead"
+                      }
+                      className={`text-[10px] px-2 py-1 rounded hover:brightness-110 ${
+                        wrapLines
+                          ? "bg-[var(--accent)] text-white"
+                          : "bg-[var(--border-primary)] text-[var(--text-secondary)]"
+                      }`}
+                    >
+                      Wrap
+                    </button>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -411,6 +433,7 @@ const actualPomodoros = task.pomodoroCount || 0;
                       task.snippets[selectedSnippet].language || "javascript"
                     }
                     style={isDark ? vscDarkPlus : vs}
+                    wrapLongLines={wrapLines}
                     customStyle={{
                       fontSize: 10,
                       borderRadius: 6,
