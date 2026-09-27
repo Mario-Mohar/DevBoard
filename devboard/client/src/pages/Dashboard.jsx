@@ -5,6 +5,7 @@ import TaskModal from "../components/Task/TaskModal";
 import Heatmap from "../components/Heatmap/Heatmap";
 import { useBoard } from "../context/BoardContext";
 import { useGithubStars } from "../hooks/useGithubStars";
+import { openVisit, touchVisit, timeAgo } from "../utils/lastVisit";
 
 const formatStars = (n) => {
   if (n === null || n === undefined) return null;
@@ -75,6 +76,17 @@ const Dashboard = () => {
 
   useEffect(() => {
     document.title = "Dashboard — DevBoard";
+  }, []);
+
+  // Read once, before anything moves the stamps, so this holds the session
+  // before this one rather than the one that just started.
+  const [lastVisit] = useState(() => openVisit());
+
+  // Keep the board marked as seen while it is open, otherwise a long session
+  // would count as a gap the moment you reload at the end of it.
+  useEffect(() => {
+    const id = setInterval(touchVisit, 60 * 1000);
+    return () => clearInterval(id);
   }, []);
 
   useEffect(() => {
@@ -364,6 +376,14 @@ const completionRate =
           <span className="text-xs text-[var(--text-secondary)] ml-2">
             {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
           </span>
+          {lastVisit && (
+            <span
+              title={`You last opened this board on ${new Date(lastVisit).toLocaleString()}`}
+              className="text-xs text-[var(--text-muted)] ml-2 no-print"
+            >
+              last visit {timeAgo(lastVisit)}
+            </span>
+          )}
           {activeTag && (
             <button
               onClick={() => setActiveTag(null)}
