@@ -106,6 +106,7 @@ const TaskCard = ({
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [selectedSnippet, setSelectedSnippet] = useState(0);
+  const [fontSize, setFontSize] = useState(10);
   // Per viewer, not global: one card can hold a wide table that needs wrapping
   // while another holds code where wrapping would hide its shape.
   const [wrapLines, setWrapLines] = useState(false);
@@ -414,6 +415,27 @@ const actualPomodoros = task.pomodoroCount || 0;
                 <>
                   <div className="flex justify-end gap-1 mb-1">
                     <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFontSize((s) => (s === 10 ? 13 : 10));
+                      }}
+                      title={
+                        fontSize === 10
+                          ? "Increase font size"
+                          : "Decrease font size"
+                      }
+                      aria-label={
+                        fontSize === 10
+                          ? "Increase snippet font size"
+                          : "Decrease snippet font size"
+                      }
+                      className="text-[10px] px-2 py-1 rounded bg-[var(--border-primary)] text-[var(--text-secondary)] hover:brightness-110"
+                    >
+                      {fontSize === 10 ? "A+" : "A-"}
+                    </button>
+                    <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         setWrapLines((on) => !on);
@@ -433,6 +455,7 @@ const actualPomodoros = task.pomodoroCount || 0;
                       Wrap
                     </button>
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         navigator.clipboard.writeText(
@@ -456,7 +479,7 @@ const actualPomodoros = task.pomodoroCount || 0;
                     style={isDark ? vscDarkPlus : vs}
                     wrapLongLines={wrapLines}
                     customStyle={{
-                      fontSize: 10,
+                      fontSize,
                       borderRadius: 6,
                       margin: 0,
                       padding: "8px 10px",
