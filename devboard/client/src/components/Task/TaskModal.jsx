@@ -213,6 +213,36 @@ const TaskModal = ({
     toast.success("Task JSON copied to clipboard");
   };
 
+  const handleExportMD = () => {
+    const md = `# ${task.title}
+
+**Status:** ${task.status}
+**Priority:** ${task.priority}
+**Tags:** ${task.tags?.join(", ") || "none"}
+**Created:** ${task.createdAt ? new Date(task.createdAt).toLocaleDateString() : "unknown"}
+
+## Description
+${task.description || "No description"}
+
+${
+  task.snippets?.length > 0
+    ? `## Code Snippets
+${task.snippets
+  .map((s) => `\`\`\`${s.language || ""}\n${s.code}\n\`\`\``)
+  .join("\n\n")}`
+    : ""
+}
+`;
+    const blob = new Blob([md], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${(task.title || "task").replace(/\s+/g, "-")}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Task exported as Markdown");
+  };
+
   useEffect(() => {
     window.history.pushState(null, "", window.location.href);
     const handlePop = () => {
@@ -645,11 +675,22 @@ const TaskModal = ({
           <div className="flex items-center gap-1">
             {task && (
               <button
+                type="button"
                 onClick={handleExportJSON}
                 title="Export as JSON"
                 className="p-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 rounded-lg transition outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
               >
                 📤
+              </button>
+            )}
+            {task && (
+              <button
+                type="button"
+                onClick={handleExportMD}
+                title="Export as Markdown"
+                className="p-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 rounded-lg transition outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+              >
+                📝
               </button>
             )}
             {task && (
