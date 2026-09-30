@@ -562,6 +562,34 @@ const TaskModal = ({
             </div>
           )}
 
+          {/* Assignee History */}
+          {task?.assigneeHistory?.length > 0 && (
+            <div className="border border-[var(--border-primary)] rounded-lg px-3 py-2">
+              <span className="text-xs text-[var(--text-secondary)] block mb-1.5">
+                👥 Previously: {task.assigneeHistory.length} assignee{task.assigneeHistory.length === 1 ? "" : "s"}
+              </span>
+              <ul className="flex flex-col gap-1">
+                {task.assigneeHistory
+                  .slice(-3)
+                  .reverse()
+                  .map((h, i) => (
+                    <li
+                      key={i}
+                      className="text-xs text-[var(--text-muted)] flex justify-between"
+                    >
+                      <span>{h.user?.name || "Previous assignee"}</span>
+                      {h.assignedAt && (
+                        <span className="text-[var(--text-secondary)]">
+                          {timeAgo(h.assignedAt)}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          )}
+
+
           {/* Add Code Snippet */}
           <div className="border border-[var(--border-primary)] rounded-lg overflow-hidden">
             <div className="flex items-center justify-between px-3 py-2 bg-[var(--bg-primary)] border-b border-[var(--border-primary)]">

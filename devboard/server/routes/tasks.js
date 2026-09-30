@@ -8,6 +8,7 @@ router.get("/", protect, async (req, res) => {
   try {
     const tasks = await Task.find()
       .populate("assignee", "name email avatar")
+      .populate("assigneeHistory.user", "name email avatar")
       .sort("order");
     res.json(tasks);
   } catch (err) {
@@ -31,30 +32,44 @@ router.post("/", protect, async (req, res) => {
 // PUT /api/tasks/:id — update task (status, content, etc.)
 router.put("/:id", protect, async (req, res) => {
   try {
-    // Only touch tags when the caller sends them — partial updates like
-    // { pomodoroCount } or { status, order } must not wipe existing tags.
-    const updates = { ...req.body };
-    if (req.body.tags !== undefined) {
-      updates.tags = Task.sanitizeTags(req.body.tags);
-    }
-    const updatedTask = await Task.findByIdAndUpdate(req.params.id, updates, {
-      new: true,
-    }).populate("assignee", "name email avatar");
-    if (!updatedTask)
-      return res.status(404).json({ message: "Task not found" });
+    const task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ message: "Task not found" });
 
-    if (req.body.status) {
-      updatedTask.activity.push({
+    // Track assignee history if assignee changes
+    if (
+      req.body.assignee &&
+      task.assignee &&
+      req.body.assignee !== task.assignee.toString()
+    ) {
+      if (!task.assigneeHistory) {
+        task.assigneeHistory = [];
+      }
+      task.assigneeHistory.push({
+        user: task.assignee,
+        assignedAt: new Date(),
+      });
+    }
+
+    if (req.body.status && req.body.status !== task.status) {
+      task.activity.push({
         action: `status changed to ${req.body.status}`,
       });
-       await updatedTask.save();
     }
-   
+
+    Object.assign(task, req.body);
+    if (req.body.tags !== undefined) {
+      task.tags = Task.sanitizeTags(req.body.tags);
+    }
+
+    await task.save();
+    await task.populate("assignee", "name email avatar");
+    await task.populate("assigneeHistory.user", "name email avatar");
+
     // Broadcast so other open boards update without refresh
     const io = req.app.get("io");
-    if (io) io.emit("task:updated", updatedTask);
+    if (io) io.emit("task:updated", task);
 
-    res.json(updatedTask);
+    res.json(task);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
