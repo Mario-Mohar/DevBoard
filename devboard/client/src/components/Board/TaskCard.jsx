@@ -17,6 +17,13 @@ const GLOW = {
   low: "hover:shadow-green-500/20",
 };
 
+const STATUS_TINTS = {
+  backlog: "",
+  inprogress: "border-l-2 border-l-purple-500/50",
+  review: "border-l-2 border-l-yellow-500/50",
+  done: "border-l-2 border-l-green-500/50 opacity-75",
+};
+
 const TAG_COLORS = [
   "bg-[var(--accent-20)] text-[var(--accent)]",
   "bg-blue-500/20 text-blue-400",
@@ -267,6 +274,7 @@ const actualPomodoros = task.pomodoroCount || 0;
               : {}),
           }}
           className={`card group bg-[var(--bg-card)] border rounded-lg p-3 cursor-pointer transition-all
+            ${STATUS_TINTS[task.status] || ""}
             hover:shadow-lg ${GLOW[task.priority] || "hover:shadow-[var(--accent-20)]"}
             ${snapshot.isDragging ? "border-[var(--accent)] shadow-lg shadow-[var(--accent-10)]" : isOverdue
               ? "border-red-500 border-l-4 hover:border-red-400" : "border-[var(--border-primary)] hover:border-[var(--border-hover)]"}`}
