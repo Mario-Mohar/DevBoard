@@ -8,6 +8,7 @@ const dotenv = require("dotenv");
 const { rateLimit } = require("express-rate-limit");
 const { Server } = require("socket.io");
 const {API_VERSION} = require("./config/constants")
+const responseTime = require("./middleware/responseTime");
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ const io = new Server(server, {
 // Make io available to route handlers (req.app.get("io"))
 app.set("io", io);
 
+app.use(responseTime);
 app.use(morgan("dev"));
 app.use(helmet());
 
@@ -45,6 +47,7 @@ app.use(
       }
     },
     credentials: true,
+    exposedHeaders: ["X-Response-Time"],
   }),
 );
 
