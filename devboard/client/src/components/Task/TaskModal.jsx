@@ -13,6 +13,11 @@ const DESCRIPTION_MAX_LENGTH = 500;
 const DESCRIPTION_WARN_AT = Math.round(DESCRIPTION_MAX_LENGTH * 0.8);
 const DESCRIPTION_ALERT_AT = Math.round(DESCRIPTION_MAX_LENGTH * 0.92);
 const COPY_SUFFIX = " (copy)";
+const PRIORITY_BY_SHORTCUT = {
+  "1": "high",
+  "2": "medium",
+  "3": "low",
+};
 
 const COLORS = [
   "#7F77DD",
@@ -133,6 +138,36 @@ const TaskModal = ({
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [handleClose]);
+
+  useEffect(() => {
+    const handlePriorityShortcut = (event) => {
+      const target = event.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.isContentEditable || target.closest("input, textarea, select"))
+      ) {
+        return;
+      }
+
+      if (
+        event.repeat ||
+        event.isComposing ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey
+      ) {
+        return;
+      }
+
+      const priority = PRIORITY_BY_SHORTCUT[event.key];
+      if (!priority) return;
+
+      setForm((current) => ({ ...current, priority }));
+    };
+
+    window.addEventListener("keydown", handlePriorityShortcut);
+    return () => window.removeEventListener("keydown", handlePriorityShortcut);
+  }, []);
 
   const handleGenerateAI = async () => {
     if (!form.title.trim()) {
@@ -460,15 +495,20 @@ ${task.snippets
               <option value="done">Done</option>
             </select>
 
-            <select
-              value={form.priority}
-              onChange={(e) => setForm({ ...form, priority: e.target.value })}
-              className="flex-1 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
-            >
-              <option value="low">Low Priority</option>
-              <option value="medium">Medium Priority</option>
-              <option value="high">High Priority</option>
-            </select>
+            <div className="flex-1">
+              <select
+                value={form.priority}
+                onChange={(e) => setForm({ ...form, priority: e.target.value })}
+                className="w-full bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+              >
+                <option value="low">Low Priority</option>
+                <option value="medium">Medium Priority</option>
+                <option value="high">High Priority</option>
+              </select>
+              <p className="mt-1 text-[11px] text-[var(--text-muted)]">
+                Press 1/2/3 to set priority quickly
+              </p>
+            </div>
           </div>
 
           <div>
