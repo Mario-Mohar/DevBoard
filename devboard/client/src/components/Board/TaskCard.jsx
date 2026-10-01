@@ -128,6 +128,18 @@ const TaskCard = ({
       false);
   const { suggestedTags, loadingTags, handleSuggestTags, handleAddTag } = useSuggestTags(task, selectedSnippet, updateTask);
   const [showPreview, setShowPreview] = useState(false);
+  const [isFlipping, setIsFlipping] = useState(false);
+  const prevStatus = useRef(task.status);
+
+  useEffect(() => {
+    if (prevStatus.current !== task.status) {
+      setIsFlipping(true);
+      const timer = setTimeout(() => setIsFlipping(false), 400);
+      prevStatus.current = task.status;
+      return () => clearTimeout(timer);
+    }
+  }, [task.status]);
+
 
   // ── Time tracker ──────────────────────────────────────────
   const [elapsed, setElapsed] = useState(0);
@@ -269,7 +281,8 @@ const actualPomodoros = task.pomodoroCount || 0;
           className={`card group bg-[var(--bg-card)] border rounded-lg p-3 cursor-pointer transition-all
             hover:shadow-lg ${GLOW[task.priority] || "hover:shadow-[var(--accent-20)]"}
             ${snapshot.isDragging ? "border-[var(--accent)] shadow-lg shadow-[var(--accent-10)]" : isOverdue
-              ? "border-red-500 border-l-4 hover:border-red-400" : "border-[var(--border-primary)] hover:border-[var(--border-hover)]"}`}
+              ? "border-red-500 border-l-4 hover:border-red-400" : "border-[var(--border-primary)] hover:border-[var(--border-hover)]"}
+            ${isFlipping ? "card-flip" : ""}`}
         >
          
           {/* Title */}
