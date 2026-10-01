@@ -43,6 +43,7 @@ const TaskModal = ({
     githubIssueUrl: task?.githubIssueUrl || "",
     githubIssueNumber: task?.githubIssueNumber || "",
     dueDate: task?.dueDate || "",
+    notes: task?.notes || "",
   };
 
   const [form, setForm] = useState(initialForm);
@@ -446,6 +447,19 @@ ${task.snippets
             </div>
 
             {aiError && <p className="text-xs text-red-400 mt-1">{aiError}</p>}
+          </div>
+
+          <div>
+            <label className="text-xs text-[var(--text-secondary)] mb-1.5 block">
+              Private Notes
+            </label>
+            <textarea
+              placeholder="Private notes (only visible to you)"
+              value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              rows={2}
+              className="w-full bg-[var(--bg-primary)] border border-dashed border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] resize-none"
+            />
           </div>
 
           <div className="flex gap-2">
