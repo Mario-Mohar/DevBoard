@@ -629,6 +629,15 @@ const actualPomodoros = task.pomodoroCount || 0;
                   {task.assignee.name[0].toUpperCase()}
                 </div>
               )}
+
+              {task.assigneeHistory?.length > 0 && (
+                <span
+                  title={`Previously: ${task.assigneeHistory.length} assignee(s)`}
+                  className="text-[10px] text-[var(--text-secondary)] flex items-center gap-0.5 cursor-default"
+                >
+                  👥 {task.assigneeHistory.length}
+                </span>
+              )}
             </div>
           </div>
 

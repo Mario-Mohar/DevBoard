@@ -25,6 +25,12 @@ const taskSchema = new mongoose.Schema(
     githubIssueUrl: { type: String, default: "" },
     githubIssueNumber: { type: Number },
     assignee: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    assigneeHistory: [
+      {
+        user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        assignedAt: { type: Date, default: Date.now },
+      },
+    ],
     dueDate: { type: Date },
     pomodoroCount: { type: Number, default: 0 },
     order: { type: Number, default: 0 },
