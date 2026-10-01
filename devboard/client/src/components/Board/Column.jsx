@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Droppable } from "@hello-pangea/dnd";
 import TaskCard from "./TaskCard";
 import { useBoard } from "../../context/BoardContext";
+import { getAvatarColor } from "../../utils/avatarColor";
 
 const COLUMN_CONFIG = {
   backlog: { label: "Backlog", color: "#888", dot: "bg-gray-500" },
@@ -165,6 +166,22 @@ const Column = ({
     };
   }, [unfilteredTasks, columnId]);
 
+  // Who is working in this column. Unfiltered for the same reason as the two
+  // counts above: the header should not empty out while you type in the
+  // search box. Everyone beyond the first three is folded into a +N.
+  const ASSIGNEES_SHOWN = 3;
+  const assignees = useMemo(() => {
+    const byId = new Map();
+    for (const task of unfilteredTasks || []) {
+      if (task.status !== columnId) continue;
+      const person = task.assignee;
+      if (!person?._id || !person.name) continue;
+      if (!byId.has(person._id)) byId.set(person._id, person);
+    }
+    const all = [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
+    return { shown: all.slice(0, ASSIGNEES_SHOWN), extra: all.slice(ASSIGNEES_SHOWN) };
+  }, [unfilteredTasks, columnId]);
+
   const config = COLUMN_CONFIG[columnId] || {
     label: columnId,
     dot: "bg-gray-500",
@@ -267,6 +284,29 @@ const Column = ({
                   <span aria-hidden="true">{"</>"}</span>
                   {totalSnippets}
                 </span>
+              )}
+
+              {assignees.shown.length > 0 && (
+                <div className="flex -space-x-1">
+                  {assignees.shown.map((person) => (
+                    <div
+                      key={person._id}
+                      title={`${person.name} has a task in this column`}
+                      className={`w-4 h-4 rounded-full ${getAvatarColor(person.name)} border border-[var(--bg)] flex items-center justify-center text-[8px] font-bold text-white`}
+                    >
+                      {person.name[0].toUpperCase()}
+                    </div>
+                  ))}
+
+                  {assignees.extra.length > 0 && (
+                    <div
+                      title={assignees.extra.map((person) => person.name).join(", ")}
+                      className="w-4 h-4 rounded-full bg-[var(--border-primary)] border border-[var(--bg)] flex items-center justify-center text-[8px] font-bold text-[var(--text-secondary)]"
+                    >
+                      +{assignees.extra.length}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           )}

@@ -4,6 +4,7 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus, vs } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useBoard } from "../../context/BoardContext";
 import { useSuggestTags } from "../../hooks/useSuggestTags";
+import { getAvatarColor } from "../../utils/avatarColor";
 
 const PRIORITY_COLORS = {
   high: "🔴 bg-red-500/20 text-red-400",
@@ -35,22 +36,6 @@ const TAG_COLORS = [
 
 const getTagColor = (tag) =>
   TAG_COLORS[tag.charCodeAt(0) % TAG_COLORS.length];
-
-const AVATAR_COLORS = [
-  "bg-[var(--accent)]",
-  "bg-blue-600",
-  "bg-green-600",
-  "bg-rose-600",
-  "bg-amber-600",
-  "bg-teal-600",
-];
-
-// Sum every character so that names sharing a first letter still differ.
-const getAvatarColor = (name) => {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash += name.charCodeAt(i);
-  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
-};
 
 // Search terms are raw user input, so they have to be escaped before they can
 // be used as a pattern — searching for "(" would otherwise throw.
