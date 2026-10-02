@@ -1,5 +1,4 @@
 
-Readme · MD
 # DevBoard
  
 **A Kanban board built for developers.**
