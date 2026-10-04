@@ -599,6 +599,9 @@ const actualPomodoros = task.pomodoroCount || 0;
               {task.snippets?.length > 0 && (
                 <span>📎 {task.snippets.length}</span>
               )}
+              {task.seenBy?.length > 0 && (
+                <span>👀 {task.seenBy.length} seen</span>
+              )}
               {task.createdAt && (
                 <span>🕐 {timeAgo(task.createdAt)}</span>
               )}
