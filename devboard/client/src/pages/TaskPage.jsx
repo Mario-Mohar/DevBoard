@@ -2,6 +2,7 @@ import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useBoard } from "../context/BoardContext";
 import TaskModal from "../components/Task/TaskModal";
+import { SearchIcon } from "../components/common/Icons";
 
 const TaskPage = () => {
   const { id } = useParams();
@@ -10,8 +11,8 @@ const TaskPage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-[var(--bg-primary)] text-[var(--text-secondary)]">
-        Loading task...
+      <div className="flex items-center justify-center h-screen bg-[#090a0e] text-zinc-500 font-mono-code text-xs">
+        Resolving task #{id}...
       </div>
     );
   }
@@ -20,22 +21,24 @@ const TaskPage = () => {
 
   if (!task) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-[var(--bg-primary)] text-center p-8">
-        <span className="text-6xl mb-4">🔍</span>
+      <div className="flex flex-col items-center justify-center h-screen bg-[#090a0e] text-center p-8 font-sans">
+        <div className="w-10 h-10 rounded-lg bg-zinc-800/80 text-zinc-400 flex items-center justify-center mb-4">
+          <SearchIcon className="w-5 h-5" />
+        </div>
 
-        <h2 className="text-2xl font-semibold text-[var(--text-primary)] mb-2">
+        <h2 className="text-base font-semibold text-zinc-100 mb-1">
           Task not found
         </h2>
 
-        <p className="text-[var(--text-secondary)] mb-6">
-          It may have been deleted, or you don't have access.
+        <p className="text-xs text-zinc-400 mb-6 font-mono-code">
+          Task ID "{id}" does not exist or has been removed.
         </p>
 
         <button
           onClick={() => navigate("/")}
-          className="bg-[var(--accent)] hover:brightness-110 text-white px-6 py-2.5 rounded-lg font-medium transition"
+          className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-mono-code font-medium transition shadow-sm shadow-blue-500/20"
         >
-          Back to Dashboard
+          Return to Board
         </button>
       </div>
     );

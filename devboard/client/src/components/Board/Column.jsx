@@ -3,16 +3,33 @@ import { Droppable } from "@hello-pangea/dnd";
 import TaskCard from "./TaskCard";
 import { useBoard } from "../../context/BoardContext";
 import { getAvatarColor } from "../../utils/avatarColor";
+import { PlusIcon, CodeIcon, ChevronDownIcon, ChevronRightIcon } from "../common/Icons";
 
 const COLUMN_CONFIG = {
-  backlog: { label: "Backlog", color: "#888", dot: "bg-gray-500" },
+  backlog: {
+    label: "Backlog",
+    color: "#71717a",
+    dot: "bg-zinc-400",
+    headerBg: "border-zinc-800",
+  },
   inprogress: {
     label: "In Progress",
-    color: "var(--accent)",
-    dot: "bg-[var(--accent)]",
+    color: "#3b82f6",
+    dot: "bg-blue-400",
+    headerBg: "border-blue-500/20",
   },
-  review: { label: "Review", color: "#EF9F27", dot: "bg-yellow-500" },
-  done: { label: "Done", color: "#639922", dot: "bg-green-500" },
+  review: {
+    label: "In Review",
+    color: "#f59e0b",
+    dot: "bg-amber-400",
+    headerBg: "border-amber-500/20",
+  },
+  done: {
+    label: "Completed",
+    color: "#10b981",
+    dot: "bg-emerald-400",
+    headerBg: "border-emerald-500/20",
+  },
 };
 
 const WIP_LIMIT = 5;
@@ -25,9 +42,6 @@ const Column = ({
   isActive,
   columns = [],
 }) => {
-  // `tasks` from the context is already filtered by search and tag, so the
-  // local name allTasks below promises more than it holds. The snippet count
-  // needs the unfiltered set, otherwise it drops while you type in the search.
   const { tasks: allTasks, allTasks: unfilteredTasks, updateTask } = useBoard();
 
   const [sorted, setSorted] = useState(false);
@@ -52,19 +66,16 @@ const Column = ({
     setPinnedIds((prev) => {
       const next = new Set(prev);
       const nowPinned = !next.has(id);
-
       if (nowPinned) {
         next.add(id);
       } else {
         next.delete(id);
       }
-
       try {
         localStorage.setItem(`pin_${id}`, String(nowPinned));
       } catch {
         // Ignore
       }
-
       return next;
     });
   };
@@ -77,13 +88,11 @@ const Column = ({
   const toggleSelect = (id) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-
       if (next.has(id)) {
         next.delete(id);
       } else {
         next.add(id);
       }
-
       return next;
     });
   };
@@ -103,9 +112,7 @@ const Column = ({
     const updates = [...selectedIds].map((id) => {
       const task = allTasks.find((t) => String(t._id) === String(id));
       if (!task) return null;
-
       base += 1;
-
       return updateTask(String(task._id), {
         status: target,
         order: base,
@@ -113,28 +120,20 @@ const Column = ({
     });
 
     await Promise.all(updates);
-
     setSelectedIds(new Set());
     setSelectionMode(false);
   };
 
   useEffect(() => {
     setAnimate(true);
-
-    const timeout = setTimeout(() => setAnimate(false), 300);
-
+    const timeout = setTimeout(() => setAnimate(false), 250);
     return () => clearTimeout(timeout);
   }, [tasks.length]);
 
   const displayTasks = (
     sorted
       ? [...tasks].sort((a, b) => {
-          const order = {
-            high: 0,
-            medium: 1,
-            low: 2,
-          };
-
+          const order = { high: 0, medium: 1, low: 2 };
           return (order[a.priority] ?? 3) - (order[b.priority] ?? 3);
         })
       : [...tasks]
@@ -144,21 +143,17 @@ const Column = ({
       (pinnedIds.has(a._id) ? 1 : 0)
   );
 
-  // A property of the column, not of the current view: counted over every task
-  // with this status, whatever the search box and the priority filter say.
   const totalSnippets = useMemo(
     () =>
       (unfilteredTasks || [])
         .filter((task) => task.status === columnId)
         .reduce((sum, task) => sum + (task.snippets?.length || 0), 0),
-    [unfilteredTasks, columnId],
+    [unfilteredTasks, columnId]
   );
 
-  // Same idea as the snippet count above: how many high and medium priority
-  // tasks sit in this column, regardless of what is currently filtered.
   const priorities = useMemo(() => {
     const inColumn = (unfilteredTasks || []).filter(
-      (task) => task.status === columnId,
+      (task) => task.status === columnId
     );
     return {
       high: inColumn.filter((task) => task.priority === "high").length,
@@ -166,9 +161,6 @@ const Column = ({
     };
   }, [unfilteredTasks, columnId]);
 
-  // Who is working in this column. Unfiltered for the same reason as the two
-  // counts above: the header should not empty out while you type in the
-  // search box. Everyone beyond the first three is folded into a +N.
   const ASSIGNEES_SHOWN = 3;
   const assignees = useMemo(() => {
     const byId = new Map();
@@ -184,182 +176,152 @@ const Column = ({
 
   const config = COLUMN_CONFIG[columnId] || {
     label: columnId,
-    dot: "bg-gray-500",
-    color: "#888",
+    dot: "bg-zinc-400",
+    color: "#71717a",
   };
 
-  const isOverLimit =
-    columnId === "inprogress" && tasks.length > WIP_LIMIT;
+  const isOverLimit = columnId === "inprogress" && tasks.length > WIP_LIMIT;
 
   return (
     <div
-      className={`flex flex-col w-full md:w-56 flex-shrink-0 rounded-lg transition-all ${
-        isActive
-          ? "border border-[var(--accent)] shadow-[0_0_12px_var(--accent-20)]"
-          : "border border-transparent"
+      className={`flex flex-col w-full md:w-72 flex-shrink-0 transition-all ${
+        isActive ? "ring-1 ring-blue-500/50" : ""
       }`}
     >
-      <div className="flex items-center justify-between mb-3 px-1">
-        <div className="flex items-center gap-2">
+      {/* Column Header */}
+      <div className="flex items-center justify-between px-2 py-2 mb-2 bg-[#0d0e13] border border-zinc-800/80 rounded-lg">
+        <div className="flex items-center gap-2 min-w-0">
           <button
             type="button"
-            onClick={() => setCollapsed((value) => !value)}
-            aria-expanded={!collapsed}
+            onClick={() => setCollapsed((v) => !v)}
             title={collapsed ? "Expand column" : "Collapse column"}
-            className="text-[10px] text-[var(--text-muted)] hover:text-[var(--accent)] transition"
+            className="text-zinc-500 hover:text-zinc-300 transition p-0.5"
           >
-            {collapsed ? "▶" : "▼"}
+            {collapsed ? <ChevronRightIcon className="w-3.5 h-3.5" /> : <ChevronDownIcon className="w-3.5 h-3.5" />}
           </button>
 
           {selectionMode ? (
-            <>
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={toggleSelectionMode}
-                title="Exit selection mode"
-                className="text-[10px] text-[var(--accent)] hover:brightness-125 transition"
+                className="text-[11px] font-mono-code text-blue-400 hover:underline"
               >
-                ☑ Exit Select mode
+                Done
               </button>
-
               <select
                 defaultValue=""
                 onChange={(e) => handleMoveTo(e.target.value)}
-                className="text-[10px] bg-[var(--bg-input)] border border-[var(--border-primary)] text-[#888] rounded px-1 py-0.5 focus:border-[var(--accent)] focus:outline-none"
+                className="text-[10px] font-mono-code bg-zinc-900 border border-zinc-700 text-zinc-300 rounded px-1.5 py-0.5"
               >
-                <option value="" disabled>
-                  Move to…
-                </option>
-
-                {columns
-                  .filter((col) => col !== columnId)
-                  .map((col) => (
-                    <option key={col} value={col}>
-                      {COLUMN_CONFIG[col]?.label ?? col}
-                    </option>
-                  ))}
+                <option value="" disabled>Move {selectedIds.size} to…</option>
+                {columns.filter((c) => c !== columnId).map((c) => (
+                  <option key={c} value={c}>
+                    {COLUMN_CONFIG[c]?.label || c}
+                  </option>
+                ))}
               </select>
-            </>
+            </div>
           ) : (
-            <div className="flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${config.dot}`} />
-
-              <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className={`w-2 h-2 rounded-full shrink-0 ${config.dot}`} />
+              <span className="text-xs font-semibold uppercase tracking-wider text-zinc-200 truncate font-mono-code">
                 {config.label}
               </span>
-
               <span
-                className={`text-[10px] bg-[var(--border-primary)] text-[var(--text-secondary)] px-1.5 py-0.5 rounded-full transition-transform duration-300 ${
-                  animate ? "scale-125" : "scale-100"
+                className={`text-[11px] font-mono-code px-1.5 py-0.2 rounded bg-zinc-800/80 text-zinc-400 border border-zinc-700/60 transition-transform ${
+                  animate ? "scale-110" : ""
                 }`}
               >
                 {tasks.length}
               </span>
 
+              {/* Priority Badges in Header */}
               {priorities.high > 0 && (
                 <span
-                  title={`${priorities.high} high priority task${priorities.high === 1 ? "" : "s"} in this column`}
-                  className="text-[10px] text-[var(--text-secondary)] flex items-center gap-0.5"
+                  title={`${priorities.high} high priority tasks`}
+                  className="text-[10px] font-mono-code text-rose-400 bg-rose-500/10 px-1 rounded border border-rose-500/20"
                 >
-                  <span aria-hidden="true">🔴</span>
-                  {priorities.high}
+                  P0:{priorities.high}
                 </span>
               )}
 
-              {priorities.medium > 0 && (
-                <span
-                  title={`${priorities.medium} medium priority task${priorities.medium === 1 ? "" : "s"} in this column`}
-                  className="text-[10px] text-[var(--text-secondary)] flex items-center gap-0.5"
-                >
-                  <span aria-hidden="true">🟡</span>
-                  {priorities.medium}
-                </span>
-              )}
-
+              {/* Code Snippets count */}
               {totalSnippets > 0 && (
                 <span
-                  title={`${totalSnippets} code snippet${totalSnippets === 1 ? "" : "s"} in this column`}
-                  className="text-[10px] text-[var(--text-secondary)] flex items-center gap-0.5"
+                  title={`${totalSnippets} snippets in column`}
+                  className="text-[10px] font-mono-code text-blue-400 bg-blue-500/10 px-1 rounded border border-blue-500/20 flex items-center gap-0.5"
                 >
-                  <span aria-hidden="true">{"</>"}</span>
-                  {totalSnippets}
+                  <CodeIcon className="w-2.5 h-2.5" />
+                  <span>{totalSnippets}</span>
                 </span>
-              )}
-
-              {assignees.shown.length > 0 && (
-                <div className="flex -space-x-1">
-                  {assignees.shown.map((person) => (
-                    <div
-                      key={person._id}
-                      title={`${person.name} has a task in this column`}
-                      className={`w-4 h-4 rounded-full ${getAvatarColor(person.name)} border border-[var(--bg)] flex items-center justify-center text-[8px] font-bold text-white`}
-                    >
-                      {person.name[0].toUpperCase()}
-                    </div>
-                  ))}
-
-                  {assignees.extra.length > 0 && (
-                    <div
-                      title={assignees.extra.map((person) => person.name).join(", ")}
-                      className="w-4 h-4 rounded-full bg-[var(--border-primary)] border border-[var(--bg)] flex items-center justify-center text-[8px] font-bold text-[var(--text-secondary)]"
-                    >
-                      +{assignees.extra.length}
-                    </div>
-                  )}
-                </div>
               )}
             </div>
           )}
         </div>
 
+        {/* Header Right Controls */}
         {!collapsed && !selectionMode && (
-          <div className="flex items-center gap-2">
-            {tasks.length >= 1 && (
+          <div className="flex items-center gap-1 shrink-0">
+            {tasks.length > 0 && (
               <button
                 type="button"
                 onClick={toggleSelectionMode}
-                title="Select tasks to move"
-                className="text-[10px] text-[#555] hover:text-[var(--accent)] transition"
+                title="Select multiple tasks to move"
+                className="text-[10px] font-mono-code text-zinc-500 hover:text-zinc-300 px-1.5 py-0.5 rounded hover:bg-zinc-800 transition"
               >
-                ☑ Select
+                Select
               </button>
             )}
 
             <button
               type="button"
-              onClick={() => setSorted((value) => !value)}
-              className="text-[10px] text-[#555] hover:text-[var(--accent)] transition"
+              onClick={() => setSorted((v) => !v)}
+              title={sorted ? "Restore default order" : "Sort by priority"}
+              className={`text-[10px] font-mono-code px-1.5 py-0.5 rounded transition ${
+                sorted ? "bg-zinc-800 text-blue-400" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
+              }`}
             >
-              {sorted ? "🔃 sorted" : "🔃 sort"}
+              Sort
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onAddTask(columnId)}
+              title={`Add task to ${config.label}`}
+              className="p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded transition"
+            >
+              <PlusIcon className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
       </div>
 
       {isOverLimit && (
-        <div className="mb-2 px-2 py-1.5 text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-md">
-          ⚠️ WIP limit exceeded! ({tasks.length}/{WIP_LIMIT})
+        <div className="mb-2 px-2.5 py-1 text-[11px] font-mono-code text-amber-300 bg-amber-500/10 border border-amber-500/25 rounded-md flex items-center gap-1.5">
+          <span>⚠️</span>
+          <span>WIP limit exceeded ({tasks.length}/{WIP_LIMIT})</span>
         </div>
       )}
 
+      {/* Column Droppable Container */}
       <Droppable droppableId={columnId}>
         {(provided, snapshot) => (
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`flex flex-col gap-2 rounded-lg p-1 transition-colors flex-1 min-h-[80px] ${
-              snapshot.isDraggingOver ? "bg-[var(--accent-10)]" : ""
+            className={`flex flex-col gap-2 rounded-xl p-2 transition-colors flex-1 min-h-[450px] bg-[#0c0d12]/50 border border-zinc-900 ${
+              snapshot.isDraggingOver ? "bg-blue-950/15 border-blue-500/30 ring-1 ring-blue-500/20" : ""
             }`}
           >
             {collapsed ? (
-              <div className="flex items-center justify-center text-center p-2 text-xs text-[var(--text-secondary)] border border-dashed border-[var(--border-primary)] rounded-md">
-                {tasks.length === 1
-                  ? "1 task hidden"
-                  : `${tasks.length} tasks hidden`}
+              <div className="flex items-center justify-center text-center p-3 text-xs text-zinc-500 border border-dashed border-zinc-800 rounded-lg font-mono-code">
+                {tasks.length} task{tasks.length === 1 ? "" : "s"} hidden
               </div>
             ) : tasks.length === 0 ? (
-              <div className="flex items-center justify-center text-center p-3 text-xs text-[var(--text-secondary)] border border-dashed border-[var(--border-primary)] rounded-md my-auto">
-                No tasks here — drag one in or click + Add card
+              <div className="flex flex-col items-center justify-center text-center p-6 text-xs text-zinc-600 border border-dashed border-zinc-800/80 rounded-lg my-auto font-mono-code">
+                <span className="text-zinc-500 mb-1">No active tasks</span>
+                <span className="text-[10px] text-zinc-600">Drag a card here or press N</span>
               </div>
             ) : (
               displayTasks.map((task, index) => (
@@ -378,19 +340,20 @@ const Column = ({
             )}
 
             {provided.placeholder}
+
+            {!collapsed && (
+              <button
+                type="button"
+                onClick={() => onAddTask(columnId)}
+                className="mt-1 w-full py-2 px-3 border border-dashed border-zinc-800 hover:border-zinc-700 bg-transparent hover:bg-zinc-900/40 rounded-lg text-xs font-mono-code text-zinc-500 hover:text-zinc-300 transition flex items-center justify-center gap-1.5"
+              >
+                <PlusIcon className="w-3.5 h-3.5" />
+                <span>Add task</span>
+              </button>
+            )}
           </div>
         )}
       </Droppable>
-
-      {!collapsed && (
-        <button
-          onClick={() => onAddTask(columnId)}
-          className="mt-2 flex items-center gap-2 text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] px-2 py-1.5 rounded hover:bg-[var(--bg-card)] transition"
-        >
-          <span>＋</span>
-          Add card
-        </button>
-      )}
     </div>
   );
 };

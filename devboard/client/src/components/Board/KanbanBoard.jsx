@@ -4,17 +4,9 @@ import Column from "./Column";
 import TaskModal from "../Task/TaskModal";
 import { useBoard } from "../../context/BoardContext";
 import confetti from "canvas-confetti";
+import { LogoIcon, SearchIcon, PlusIcon, XIcon } from "../common/Icons";
 
 const COLUMNS = ["backlog", "inprogress", "review", "done"];
-
-const DEV_QUOTES = [
-  "It works on my machine 🤷",
-  "Have you tried turning it off and on again? 💻",
-  "Fix one bug, create three more 🐛",
-  "Code never lies, comments sometimes do 📝",
-  "It's not a bug, it's a feature ✨",
-  "Works fine in production... said no one 😅",
-];
 
 const KanbanBoard = ({
   tasks: filteredTasks,
@@ -25,8 +17,6 @@ const KanbanBoard = ({
 }) => {
   const { tasks, updateTask, addTask, loading } = useBoard();
   const displayedTasks = filteredTasks ?? tasks;
-  const quote =
-    DEV_QUOTES[Math.floor(Math.random() * DEV_QUOTES.length)];
 
   const [modalOpen, setModalOpen] = useState(false);
   const [defaultStatus, setDefaultStatus] = useState("backlog");
@@ -38,7 +28,6 @@ const KanbanBoard = ({
 
   const [showinput, setShowinput] = useState(false);
   const [columnName, setColumnName] = useState("");
-
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -54,9 +43,7 @@ const KanbanBoard = ({
         setModalOpen(true);
       }
     };
-
     window.addEventListener("keydown", handler);
-
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
@@ -83,29 +70,27 @@ const KanbanBoard = ({
   const playDoneSound = () => {
     const AudioContextClass =
       window.AudioContext || window.webkitAudioContext;
-
     if (!AudioContextClass) return;
 
-    const ctx = new AudioContextClass();
-    const notes = [523, 659, 784];
-
-    notes.forEach((frequency, index) => {
-      const oscillator = ctx.createOscillator();
-      const gain = ctx.createGain();
-      const startTime = ctx.currentTime + index * 0.1;
-
-      oscillator.connect(gain);
-      gain.connect(ctx.destination);
-
-      oscillator.frequency.value = frequency;
-      oscillator.type = "sine";
-
-      gain.gain.setValueAtTime(0.3, startTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.5);
-
-      oscillator.start(startTime);
-      oscillator.stop(startTime + 0.5);
-    });
+    try {
+      const ctx = new AudioContextClass();
+      const notes = [523, 659, 784];
+      notes.forEach((frequency, index) => {
+        const oscillator = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const startTime = ctx.currentTime + index * 0.1;
+        oscillator.connect(gain);
+        gain.connect(ctx.destination);
+        oscillator.frequency.value = frequency;
+        oscillator.type = "sine";
+        gain.gain.setValueAtTime(0.2, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.4);
+        oscillator.start(startTime);
+        oscillator.stop(startTime + 0.4);
+      });
+    } catch {
+      // Audio playback failed
+    }
   };
 
   const onDragEnd = async (result) => {
@@ -124,27 +109,22 @@ const KanbanBoard = ({
       destination.droppableId === "done" &&
       source.droppableId !== "done"
     ) {
-      confetti({ particleCount: 100, spread: 70 });
+      confetti({ particleCount: 70, spread: 60, origin: { y: 0.8 } });
       playDoneSound();
     }
 
-    const sourceTasks = Array.from(
-      getTasksByStatus(source.droppableId)
-    );
-
+    const sourceTasks = Array.from(getTasksByStatus(source.droppableId));
     const destTasks =
       source.droppableId === destination.droppableId
         ? sourceTasks
         : Array.from(getTasksByStatus(destination.droppableId));
 
-    const idMatch = (task) =>
-      String(task._id) === String(draggableId);
+    const idMatch = (task) => String(task._id) === String(draggableId);
 
     const moved =
-      sourceTasks[source.index] &&
-      idMatch(sourceTasks[source.index])
+      sourceTasks[source.index] && idMatch(sourceTasks[source.index])
         ? sourceTasks[source.index]
-        : sourceTasks.find(idMatch) || tasks.find(idMatch);
+        : sourceTasks.find(idMatch) || displayedTasks.find(idMatch);
 
     if (!moved) return;
 
@@ -158,7 +138,6 @@ const KanbanBoard = ({
 
     if (source.droppableId === destination.droppableId) {
       sourceTasks.splice(destination.index, 0, moved);
-
       await Promise.all(
         sourceTasks.map((task, index) =>
           updateTask(task._id, {
@@ -167,7 +146,6 @@ const KanbanBoard = ({
           })
         )
       );
-
       return;
     }
 
@@ -183,7 +161,6 @@ const KanbanBoard = ({
           order: index,
         })
       ),
-
       ...destTasks.map((task, index) =>
         updateTask(task._id, {
           status: destination.droppableId,
@@ -199,7 +176,8 @@ const KanbanBoard = ({
   };
 
   const handleSubmit = () => {
-    setColumns((prev) => [...prev, columnName]);
+    if (!columnName.trim()) return;
+    setColumns((prev) => [...prev, columnName.trim().toLowerCase()]);
     setColumnName("");
     setShowinput(false);
   };
@@ -217,7 +195,7 @@ const KanbanBoard = ({
     <>
       {showinput && (
         <div
-          className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={handleCancel}
           onKeyDown={(e) => {
             if (e.key === "Escape") handleCancel();
@@ -225,32 +203,42 @@ const KanbanBoard = ({
           }}
         >
           <div
-            className="flex flex-col bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-lg p-6 w-96 shadow-xl"
+            className="flex flex-col bg-[#121319] border border-zinc-800 rounded-xl p-5 w-full max-w-sm shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-200 font-mono-code">
+                Add New Column
+              </h3>
+              <button onClick={handleCancel} className="text-zinc-500 hover:text-zinc-300">
+                <XIcon className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
             <input
               ref={inputRef}
               type="text"
-              placeholder="Enter column name"
+              placeholder="e.g. testing, deployment"
               value={columnName}
               onChange={(e) => setColumnName(e.target.value)}
-              className="border border-[var(--border-primary)] rounded px-2 py-1 bg-[var(--bg-input)] text-[var(--text-primary)] placeholder-[var(--text-secondary)] focus:border-[var(--accent)] focus:outline-none"
+              className="border border-zinc-800 rounded-lg px-3 py-2 bg-[#090a0e] text-xs font-mono-code text-zinc-100 placeholder-zinc-600 focus:border-blue-500 focus:outline-none mb-4"
             />
 
-            <div className="flex justify-end gap-2 mt-4">
+            <div className="flex justify-end gap-2">
               <button
+                type="button"
                 onClick={handleCancel}
-                className="px-4 py-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                className="px-3 py-1.5 text-xs text-zinc-400 hover:text-zinc-200 transition"
               >
                 Cancel
               </button>
-
               <button
+                type="button"
                 onClick={handleSubmit}
-                className="px-4 py-2 bg-[var(--accent)] text-white rounded hover:brightness-110 focus:ring-2 focus:ring-[var(--accent)] disabled:opacity-50 disabled:cursor-not-allowed transition"
                 disabled={!columnName.trim()}
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs font-medium transition disabled:opacity-50"
               >
-                Add
+                Create Column
               </button>
             </div>
           </div>
@@ -258,47 +246,47 @@ const KanbanBoard = ({
       )}
 
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="board board-bg flex flex-col md:flex-row gap-4 p-4 overflow-x-hidden md:overflow-x-auto overflow-y-auto h-full">
+        <div className="board flex flex-col md:flex-row gap-4 p-5 overflow-x-hidden md:overflow-x-auto overflow-y-auto h-full min-h-[calc(100vh-140px)] bg-[#090a0e]">
           {totalTasks === 0 && !loading ? (
-            <div className="flex flex-col items-center justify-center w-full py-24">
-              <div className="text-6xl animate-bounce mb-4">
-                🗂️
+            <div className="flex flex-col items-center justify-center w-full py-20 text-center my-auto">
+              <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 flex items-center justify-center mb-4 shadow-lg shadow-blue-500/5">
+                <LogoIcon className="w-6 h-6" />
               </div>
 
-              <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
-                Your board is empty!
+              <h2 className="text-base font-semibold text-zinc-100 mb-1 tracking-tight">
+                No active tasks on your board
               </h2>
 
-              <p className="text-sm text-[var(--text-muted)] mb-6">
-                Create your first task to get started
-              </p>
-
-              <p className="text-sm italic text-[var(--text-secondary)] mb-6">
-                {quote}
+              <p className="text-xs text-zinc-400 max-w-sm mb-6 leading-relaxed">
+                Create tasks, paste code snippets, link GitHub issues, and track your focus sessions.
               </p>
 
               <button
+                type="button"
                 onClick={() => handleAddTask("backlog")}
-                className="px-5 py-2 bg-[var(--accent)] hover:brightness-110 text-white rounded-lg text-sm font-medium transition"
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium transition shadow-sm shadow-blue-500/20 flex items-center gap-2 font-mono-code"
               >
-                ✨ Create first task
+                <PlusIcon className="w-3.5 h-3.5" />
+                <span>Create Task (N)</span>
               </button>
             </div>
           ) : isEmpty ? (
-            <div className="flex flex-col items-center justify-center w-full h-64 text-gray-500">
-              <span className="text-4xl mb-4">🔍</span>
+            <div className="flex flex-col items-center justify-center w-full py-16 text-center my-auto">
+              <div className="w-10 h-10 rounded-lg bg-zinc-800/60 text-zinc-400 flex items-center justify-center mb-3">
+                <SearchIcon className="w-5 h-5" />
+              </div>
 
-              <h3 className="text-xl font-semibold mb-2">
-                No tasks found!
+              <h3 className="text-sm font-semibold text-zinc-200 mb-1">
+                No matching tasks found
               </h3>
 
-              <p className="text-sm">
-                Try a different filter or create a new task
+              <p className="text-xs text-zinc-500 font-mono-code">
+                Adjust your search query or filter tags to reveal tasks.
               </p>
             </div>
           ) : (
             <>
-              {columns.map((col) => (
+              {visibleColumns.map((col) => (
                 <Column
                   key={col}
                   columnId={col}
@@ -310,14 +298,17 @@ const KanbanBoard = ({
                 />
               ))}
 
-              <button
-                className="flex no-print"
-                onClick={() => {
-                  setShowinput(true);
-                }}
-              >
-                + Add Column
-              </button>
+              {/* Add Column Button */}
+              <div className="flex-shrink-0 w-72 hidden md:flex items-start">
+                <button
+                  type="button"
+                  onClick={() => setShowinput(true)}
+                  className="w-full py-2.5 px-3 border border-dashed border-zinc-800 hover:border-zinc-700 bg-zinc-900/20 hover:bg-zinc-900/50 rounded-xl text-xs font-mono-code text-zinc-500 hover:text-zinc-300 transition flex items-center justify-center gap-1.5"
+                >
+                  <PlusIcon className="w-3.5 h-3.5" />
+                  <span>New Column</span>
+                </button>
+              </div>
             </>
           )}
         </div>

@@ -2,6 +2,17 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { toast } from "react-toastify";
 import { useBoard } from "../../context/BoardContext";
 import { QRCodeSVG } from "qrcode.react";
+import {
+  SparklesIcon,
+  DownloadIcon,
+  CodeIcon,
+  CopyIcon,
+  QrCodeIcon,
+  ExternalLinkIcon,
+  PinIcon,
+  XIcon,
+  CheckIcon,
+} from "../common/Icons";
 
 const TITLE_MAX_LENGTH = 100;
 // The AI generator asks Gemini for "2-3 sentences", which lands around 150 to
@@ -396,21 +407,28 @@ ${task.snippets
 
   return (
     <div
-      className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) handleClose();
       }}
     >
-      <div className="bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-xl w-full max-w-lg shadow-2xl">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-primary)]">
-          <h2 className="font-semibold text-[var(--text-primary)]">
-            {mode === "create" ? "New Task" : "Edit Task"}
-          </h2>
+      <div className="bg-[#121319] border border-zinc-800 rounded-xl w-full max-w-lg shadow-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-800 bg-[#0f1016]">
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold text-zinc-100 text-sm font-mono-code">
+              {mode === "create" ? "New Task" : "Edit Task"}
+            </h2>
+            {task?._id && (
+              <span className="text-[10px] font-mono-code text-zinc-500 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 rounded">
+                #{String(task._id).slice(-4)}
+              </span>
+            )}
+          </div>
           <button
             onClick={handleClose}
-            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xl"
+            className="text-zinc-500 hover:text-zinc-300 transition"
           >
-            ✕
+            <XIcon className="w-4 h-4" />
           </button>
         </div>
 
@@ -446,9 +464,10 @@ ${task.snippets
                 type="button"
                 onClick={handleGenerateAI}
                 disabled={isGenerating || !form.title.trim()}
-                className="text-xs font-medium text-[var(--accent)] hover:brightness-125 disabled:opacity-40 transition flex items-center gap-1 bg-[var(--accent-10)] border border-[var(--accent-20)] hover:border-[var(--accent)] px-2.5 py-1 rounded-md"
+                className="text-[11px] font-mono-code font-medium text-blue-400 hover:text-blue-300 disabled:opacity-40 transition flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 hover:border-blue-500/40 px-2.5 py-1 rounded-md"
               >
-                {isGenerating ? "✨ Generating..." : "✨ Generate with AI"}
+                <SparklesIcon className="w-3 h-3 text-blue-400" />
+                <span>{isGenerating ? "Generating..." : "Generate AI Description"}</span>
               </button>
             </div>
 
@@ -753,16 +772,16 @@ ${task.snippets
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-2 px-5 py-4 border-t border-[var(--border-primary)]">
+        <div className="flex items-center justify-between gap-2 px-5 py-3.5 border-t border-zinc-800 bg-[#0f1016]">
           <div className="flex items-center gap-1">
             {task && (
               <button
                 type="button"
                 onClick={handleExportJSON}
                 title="Export as JSON"
-                className="p-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 rounded-lg transition outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                className="p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition"
               >
-                📤
+                <DownloadIcon className="w-3.5 h-3.5" />
               </button>
             )}
             {task && (
@@ -770,9 +789,9 @@ ${task.snippets
                 type="button"
                 onClick={handleExportMD}
                 title="Export as Markdown"
-                className="p-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 rounded-lg transition outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                className="p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition"
               >
-                📝
+                <CodeIcon className="w-3.5 h-3.5" />
               </button>
             )}
             {task && (
@@ -780,9 +799,9 @@ ${task.snippets
                 onClick={handleDuplicate}
                 disabled={duplicating || !form.title.trim()}
                 title="Duplicate task"
-                className="p-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 rounded-lg transition outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-40"
+                className="p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition disabled:opacity-40"
               >
-                📄
+                <CopyIcon className="w-3.5 h-3.5" />
               </button>
             )}
             {task && (
@@ -790,9 +809,9 @@ ${task.snippets
                 type="button"
                 onClick={() => setShowQR((value) => !value)}
                 title={showQR ? "Hide QR code" : "Show QR code"}
-                className="p-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 rounded-lg transition"
+                className={`p-1.5 rounded-lg transition ${showQR ? "bg-zinc-800 text-blue-400" : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"}`}
               >
-                📱
+                <QrCodeIcon className="w-3.5 h-3.5" />
               </button>
             )}
             {task && (
@@ -804,62 +823,64 @@ ${task.snippets
                   toast.success("Share link copied to clipboard");
                 }}
                 title="Copy share link"
-                className="p-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 rounded-lg transition outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                className="p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition"
               >
-                🔗
+                <ExternalLinkIcon className="w-3.5 h-3.5" />
               </button>
             )}
             <button
               type="button"
               onClick={handleSaveTemplate}
               disabled={!form.title.trim()}
-              title={saved ? "Saved!" : "Save as reusable template"}
-              className="p-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 rounded-lg transition outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-40"
+              title={saved ? "Saved template!" : "Save as reusable template"}
+              className="p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition disabled:opacity-40"
             >
-              {saved ? "✅" : "💾"}
+              {saved ? <CheckIcon className="w-3.5 h-3.5 text-emerald-400" /> : <PinIcon className="w-3.5 h-3.5" />}
             </button>
           </div>
 
           <div className="flex items-center flex-wrap justify-end gap-2">
             <button
               onClick={handleClose}
-              className="shrink-0 whitespace-nowrap px-4 py-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition"
+              className="shrink-0 whitespace-nowrap px-3 py-1.5 text-xs text-zinc-400 hover:text-zinc-200 transition font-mono-code"
             >
               Cancel
             </button>
             {confirmDelete ? (
-              <div className="shrink-0 flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-lg pl-3 pr-1.5 py-1.5">
-                <span className="text-xs text-[var(--text-secondary)] whitespace-nowrap">
-                  You sure? 👀
+              <div className="shrink-0 flex items-center gap-2 bg-rose-500/10 border border-rose-500/30 rounded-lg px-2.5 py-1">
+                <span className="text-xs text-zinc-400 whitespace-nowrap font-mono-code">
+                  Delete task?
                 </span>
                 <button
                   onClick={async () => {
                     await deleteTask(task._id);
                     onClose();
                   }}
-                  className="text-xs font-bold text-red-400 hover:text-white hover:bg-red-500 px-2 py-1 rounded-md transition whitespace-nowrap"
+                  className="text-xs font-semibold text-white bg-rose-600 hover:bg-rose-500 px-2 py-0.5 rounded transition whitespace-nowrap font-mono-code"
                 >
-                  yes slay 💀
+                  Confirm Delete
                 </button>
                 <button
                   onClick={() => setConfirmDelete(false)}
-                  className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 px-2 py-1 rounded-md transition whitespace-nowrap"
+                  className="text-xs text-zinc-400 hover:text-zinc-200 px-1 py-0.5 rounded transition whitespace-nowrap font-mono-code"
                 >
-                  nvm
+                  Cancel
                 </button>
               </div>
             ) : (
-              <button
-                onClick={() => setConfirmDelete(true)}
-                className="shrink-0 whitespace-nowrap px-4 py-2 text-sm text-red-400 hover:text-red-300 transition"
-              >
-                Delete
-              </button>
+              mode === "edit" && (
+                <button
+                  onClick={() => setConfirmDelete(true)}
+                  className="shrink-0 whitespace-nowrap px-3 py-1.5 text-xs text-rose-400 hover:text-rose-300 transition font-mono-code"
+                >
+                  Delete
+                </button>
+              )
             )}
             <button
               onClick={handleSave}
               disabled={loading || !form.title.trim() || isDuplicate}
-              className="shrink-0 whitespace-nowrap px-5 py-2 text-sm bg-[var(--accent)] hover:brightness-110 text-white rounded-lg font-medium transition disabled:opacity-40"
+              className="shrink-0 whitespace-nowrap px-4 py-1.5 text-xs bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-lg font-medium transition disabled:opacity-40 shadow-sm shadow-blue-500/20 font-mono-code"
             >
               {loading
                 ? "Saving..."
