@@ -1,48 +1,53 @@
 import { useState, useEffect, useRef } from "react";
 import { Draggable } from "@hello-pangea/dnd";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { vscDarkPlus, vs } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useBoard } from "../../context/BoardContext";
 import { useSuggestTags } from "../../hooks/useSuggestTags";
 import { getAvatarColor } from "../../utils/avatarColor";
+import {
+  CodeIcon,
+  CopyIcon,
+  CheckIcon,
+  PinIcon,
+  GithubIcon,
+  ClockIcon,
+  TimerIcon,
+  PlayIcon,
+  PauseIcon,
+  EditIcon,
+  TrashIcon,
+  SparklesIcon,
+} from "../common/Icons";
 
-const PRIORITY_COLORS = {
-  high: "🔴 bg-red-500/20 text-red-400",
-  medium: "🟡 bg-yellow-500/20 text-yellow-400",
-  low: "🟢 bg-green-500/20 text-green-400",
+const PRIORITY_BADGES = {
+  high: {
+    label: "P0 High",
+    classes: "bg-rose-500/10 text-rose-400 border-rose-500/30",
+    dot: "bg-rose-400",
+  },
+  medium: {
+    label: "P1 Med",
+    classes: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+    dot: "bg-amber-400",
+  },
+  low: {
+    label: "P2 Low",
+    classes: "bg-zinc-800 text-zinc-400 border-zinc-700/60",
+    dot: "bg-zinc-400",
+  },
 };
 
-const GLOW = {
-  high: "hover:shadow-red-500/20",
-  medium: "hover:shadow-yellow-500/20",
-  low: "hover:shadow-green-500/20",
+const STATUS_INDICATORS = {
+  backlog: "border-l-zinc-700",
+  inprogress: "border-l-blue-500",
+  review: "border-l-amber-500",
+  done: "border-l-emerald-500",
 };
 
-const STATUS_TINTS = {
-  backlog: "",
-  inprogress: "border-l-2 border-l-purple-500/50",
-  review: "border-l-2 border-l-yellow-500/50",
-  done: "border-l-2 border-l-green-500/50 opacity-75",
-};
-
-const TAG_COLORS = [
-  "bg-[var(--accent-20)] text-[var(--accent)]",
-  "bg-blue-500/20 text-blue-400",
-  "bg-green-500/20 text-green-400",
-  "bg-red-500/20 text-red-400",
-  "bg-yellow-500/20 text-yellow-400",
-  "bg-pink-500/20 text-pink-400",
-];
-
-const getTagColor = (tag) =>
-  TAG_COLORS[tag.charCodeAt(0) % TAG_COLORS.length];
-
-// Search terms are raw user input, so they have to be escaped before they can
-// be used as a pattern — searching for "(" would otherwise throw.
+// Search escaping
 const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-// Wrap every occurrence of the active search term in a <mark> so it is visible
-// on the card itself why it survived the filter.
 const highlightMatch = (text, query) => {
   const term = query?.trim();
   if (!term || !text) return text;
@@ -53,7 +58,7 @@ const highlightMatch = (text, query) => {
     part.toLowerCase() === term.toLowerCase() ? (
       <mark
         key={i}
-        className="bg-[var(--accent-30)] text-[var(--accent)] rounded px-0.5"
+        className="bg-blue-500/25 text-blue-200 rounded px-0.5"
       >
         {part}
       </mark>
@@ -71,7 +76,6 @@ const estimateToPomodoros = (estimate) => {
     "4h": 8,
     "1d": 16,
   };
-
   return map[estimate] || null;
 };
 
@@ -98,19 +102,13 @@ const TaskCard = ({
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [selectedSnippet, setSelectedSnippet] = useState(0);
-  const [fontSize, setFontSize] = useState(10);
-  // Per viewer, not global: one card can hold a wide table that needs wrapping
-  // while another holds code where wrapping would hide its shape.
+  const [fontSize, setFontSize] = useState(11);
   const [wrapLines, setWrapLines] = useState(false);
   const [copied, setCopied] = useState(false);
   const [contextMenu, setContextMenu] = useState(null);
   const cardRef = useRef(null);
   const { activeTag, setActiveTag, updateTask, deleteTask, addTask, searchQuery } = useBoard();
 
-  // Why a badge and not highlightMatch as elsewhere: the snippet body is
-  // collapsed and syntax-highlighted, so there is nothing to mark up until the
-  // viewer is open. Without this, a card appears in the result with no visible
-  // reason why.
   const snippetQuery = searchQuery?.trim().toLowerCase() || "";
   const snippetMatches =
     snippetQuery.length > 0 &&
@@ -118,20 +116,19 @@ const TaskCard = ({
       (snippet?.code || "").toLowerCase().includes(snippetQuery)
     ) ??
       false);
+
   const { suggestedTags, loadingTags, handleSuggestTags, handleAddTag } = useSuggestTags(task, selectedSnippet, updateTask);
-  const [showPreview, setShowPreview] = useState(false);
   const [isFlipping, setIsFlipping] = useState(false);
   const prevStatus = useRef(task.status);
 
   useEffect(() => {
     if (prevStatus.current !== task.status) {
       setIsFlipping(true);
-      const timer = setTimeout(() => setIsFlipping(false), 400);
+      const timer = setTimeout(() => setIsFlipping(false), 350);
       prevStatus.current = task.status;
       return () => clearTimeout(timer);
     }
   }, [task.status]);
-
 
   // ── Time tracker ──────────────────────────────────────────
   const [elapsed, setElapsed] = useState(0);
@@ -154,24 +151,20 @@ const TaskCard = ({
     const h = Math.floor(s / 3600);
     const m = Math.floor((s % 3600) / 60);
     const sec = s % 60;
-    return `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+    return `${h > 0 ? `${h}:` : ""}${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
   };
 
-  // Clean up interval on unmount
   useEffect(() => {
     return () => clearInterval(intervalRef.current);
   }, []);
-
-  // TODO: connect isDark to ThemeContext when light mode is implemented
-  const isDark = true;
 
   const handleCopy = (e) => {
     e.stopPropagation();
     navigator.clipboard.writeText(task.title);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), 1500);
   };
-  // Right-click context menu (Edit / Delete / Duplicate) ---------
+
   const handleContextMenu = (e) => {
     e.preventDefault();
     setContextMenu({ x: e.clientX, y: e.clientY });
@@ -183,7 +176,7 @@ const TaskCard = ({
     closeContextMenu();
     try {
       await addTask({
-        title: task.title,
+        title: `${task.title} (copy)`,
         description: task.description,
         status: task.status,
         priority: task.priority,
@@ -201,28 +194,23 @@ const TaskCard = ({
   };
 
   const getTaskAge = (createdAt) => {
-  const days = Math.floor(
-    (Date.now() - new Date(createdAt)) / 86400000
-  );
-  return days;
-};
+    if (!createdAt) return 0;
+    return Math.floor((Date.now() - new Date(createdAt)) / 86400000);
+  };
 
-const age = getTaskAge(task.createdAt);
+  const age = getTaskAge(task.createdAt);
 
-// --- Stale task warning (issue: warn when a task has been "in progress" 7+ days with no update) ---
-const getDaysSinceUpdate = (updatedAt) => {
-  if (!updatedAt) return 0;
-  return Math.floor((Date.now() - new Date(updatedAt)) / 86400000);
-};
+  const getDaysSinceUpdate = (updatedAt) => {
+    if (!updatedAt) return 0;
+    return Math.floor((Date.now() - new Date(updatedAt)) / 86400000);
+  };
 
-const isStale =
-  task.status === "inprogress" && getDaysSinceUpdate(task.updatedAt) >= 7;
-// ---------------------------------------------------------------------------------
+  const isStale =
+    task.status === "inprogress" && getDaysSinceUpdate(task.updatedAt) >= 7;
 
-const estimatedPomodoros = estimateToPomodoros(task.estimate);
-const actualPomodoros = task.pomodoroCount || 0;
+  const estimatedPomodoros = estimateToPomodoros(task.estimate);
+  const actualPomodoros = task.pomodoroCount || 0;
 
-  // Close the menu when clicking (or right-clicking) elsewhere
   useEffect(() => {
     if (!contextMenu) return;
     const handleClick = () => closeContextMenu();
@@ -237,18 +225,12 @@ const actualPomodoros = task.pomodoroCount || 0;
     };
   }, [contextMenu]);
 
-  // Check if the task due date has passed and the task is not completed ---------
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const dueDate = new Date(task.dueDate);
-  const isOverdue = task.dueDate && dueDate < today && task.status !== "done";
-  const isDueToday =
-    task.dueDate &&
-    task.status !== "done" &&
-    !isOverdue &&
-    dueDate.toDateString() === today.toDateString();
-  // const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== "Done";
-  // ------------------
+  const dueDate = task.dueDate ? new Date(task.dueDate) : null;
+  const isOverdue = dueDate && dueDate < today && task.status !== "done";
+
+  const priorityMeta = PRIORITY_BADGES[task.priority?.toLowerCase()] || PRIORITY_BADGES.medium;
 
   return (
     <Draggable draggableId={String(task._id)} index={index}>
@@ -267,383 +249,320 @@ const actualPomodoros = task.pomodoroCount || 0;
           style={{
             ...provided.draggableProps.style,
             ...(task.labelColor
-              ? { borderLeft: `3px solid ${task.labelColor}` }
+              ? { borderLeftColor: task.labelColor }
               : {}),
           }}
-          className={`card group bg-[var(--bg-card)] border rounded-lg p-3 cursor-pointer transition-all
-            ${STATUS_TINTS[task.status] || ""}
-            hover:shadow-lg ${GLOW[task.priority] || "hover:shadow-[var(--accent-20)]"}
-            ${snapshot.isDragging ? "border-[var(--accent)] shadow-lg shadow-[var(--accent-10)]" : isOverdue
-              ? "border-red-500 border-l-4 hover:border-red-400" : "border-[var(--border-primary)] hover:border-[var(--border-hover)]"}
+          className={`card group bg-[#121319] hover:bg-[#161821] border border-zinc-800/80 hover:border-zinc-700/90 rounded-lg p-3 cursor-pointer transition-all duration-150 relative select-none shadow-sm
+            border-l-[3px] ${task.labelColor ? "" : STATUS_INDICATORS[task.status] || "border-l-zinc-700"}
+            ${snapshot.isDragging ? "shadow-2xl shadow-blue-900/40 border-blue-500 scale-[1.02]" : ""}
+            ${isOverdue ? "!border-rose-500/80 !border-l-rose-500" : ""}
+            ${selected ? "ring-2 ring-blue-500" : ""}
             ${isFlipping ? "card-flip" : ""}`}
         >
-         
-          {/* Title */}
-          <div className="flex items-start justify-between gap-2 mb-2">
-            {selectionMode && (
-              <input
-                type="checkbox"
-                checked={selected}
-                onChange={() => onToggleSelect(task._id)}
-                onClick={(e) => e.stopPropagation()}
-                className="accent-[var(--accent)] shrink-0 mt-0.5 cursor-pointer"
-              />
-            )}
-
-            <p className="text-sm font-medium text-[#f0f0f0] leading-snug min-w-0 break-words">
-              {highlightMatch(task.title, searchQuery)}
-            </p>
-
-            <button
-              type="button"
-              onClick={handleCopy}
-              aria-label={copied ? "Task title copied" : "Copy task title"}
-              title={copied ? "Copied!" : "Copy title"}
-              className="shrink-0 text-xs"
-            >
-              {copied ? "✅" : "📋"}
-            </button>
-
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onPin(task._id);
-              }}
-              aria-label={pinned ? "Unpin task" : "Pin task"}
-              title={pinned ? "Unpin task" : "Pin task"}
-              className="shrink-0 text-xs"
-            >
-              {pinned ? "📌" : "📍"}
-            </button>
-          </div>
-          
-          {/* Description */}
-          {task.description && (
-            <div
-              onMouseEnter={() => setShowPreview(true)}
-              onMouseLeave={() => setShowPreview(false)}
-              className="text-[10px] text-[#555] hover:text-[#888]"
-            >
-              💬 preview
-
-              {showPreview && (
-                <div>
-                  {task.description.slice(0, 100)}
-                  {task.description.length > 100 && "..."}
-                </div>
+          {/* Card Top Metadata: Priority, ID, Pin, Copy */}
+          <div className="flex items-center justify-between gap-1.5 mb-2">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {selectionMode && (
+                <input
+                  type="checkbox"
+                  checked={selected}
+                  onChange={() => onToggleSelect(task._id)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="accent-blue-500 shrink-0 cursor-pointer w-3.5 h-3.5 rounded"
+                />
               )}
+
+              {/* Priority Pill */}
+              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono-code font-medium border ${priorityMeta.classes}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${priorityMeta.dot}`} />
+                {priorityMeta.label}
+              </span>
+
+              {/* GitHub Issue Reference */}
+              {task.githubIssueNumber && (
+                <a
+                  href={task.githubIssueUrl || "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center gap-1 text-[10px] font-mono-code text-zinc-400 hover:text-zinc-200 bg-zinc-800/60 hover:bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700/50 transition"
+                  title="View GitHub Issue"
+                >
+                  <GithubIcon className="w-3 h-3 text-zinc-400" />
+                  <span>#{task.githubIssueNumber}</span>
+                </a>
+              )}
+
+              {/* Pinned Indicator */}
+              {pinned && (
+                <span className="text-[10px] font-mono-code text-blue-400 bg-blue-500/10 border border-blue-500/30 px-1 py-0.5 rounded flex items-center gap-0.5">
+                  <PinIcon className="w-2.5 h-2.5" fill="currentColor" />
+                  <span>pin</span>
+                </span>
+              )}
+
+              {isOverdue && (
+                <span className="text-[10px] font-mono-code text-rose-400 bg-rose-500/10 border border-rose-500/30 px-1 py-0.5 rounded font-medium">
+                  overdue
+                </span>
+              )}
+            </div>
+
+            {/* Quick action buttons (show on hover) */}
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                type="button"
+                onClick={handleCopy}
+                title={copied ? "Copied title" : "Copy title"}
+                className="p-1 rounded text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition"
+              >
+                {copied ? <CheckIcon className="w-3 h-3 text-emerald-400" /> : <CopyIcon className="w-3 h-3" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPin(task._id);
+                }}
+                title={pinned ? "Unpin task" : "Pin task"}
+                className={`p-1 rounded transition ${pinned ? "text-blue-400" : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"}`}
+              >
+                <PinIcon className="w-3 h-3" fill={pinned ? "currentColor" : "none"} />
+              </button>
+            </div>
+          </div>
+
+          {/* Title */}
+          <h4 className="text-[13px] font-medium text-zinc-100 leading-snug tracking-tight break-words mb-1.5">
+            {highlightMatch(task.title, searchQuery)}
+          </h4>
+
+          {/* Description Excerpt */}
+          {task.description && (
+            <p className="text-[11px] text-zinc-400 line-clamp-2 leading-relaxed mb-2 font-normal">
+              {task.description}
+            </p>
+          )}
+
+          {/* Tag Pills */}
+          {task.tags && task.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-2">
+              {task.tags.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveTag(activeTag === tag ? null : tag);
+                  }}
+                  className={`text-[10px] font-mono-code px-1.5 py-0.5 rounded transition border ${
+                    activeTag === tag
+                      ? "bg-blue-500 text-white border-blue-400 font-medium"
+                      : "bg-zinc-800/70 hover:bg-zinc-700/80 text-zinc-400 hover:text-zinc-200 border-zinc-700/50"
+                  }`}
+                >
+                  #{tag}
+                </button>
+              ))}
             </div>
           )}
 
-          {/* GitHub issue link */}
-          {task.githubIssueUrl && (
-            <a
-              href={task.githubIssueUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="flex items-center gap-1 text-[10px] text-[var(--text-secondary)] hover:text-[var(--accent)] mb-2"
-            >
-              <span>🔗</span> #{task.githubIssueNumber} GitHub Issue
-            </a>
-          )}
-
-          {/* Code snippets preview */}
+          {/* Code Snippets Block */}
           {task.snippets?.length > 0 && (
-            <div className=" mb-2">
-              <div className="flex items-center justify-between mb-1">
+            <div className="mb-2 rounded-md bg-[#0b0c10] border border-zinc-800 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-2.5 py-1 bg-zinc-900/80 border-b border-zinc-800/80 text-[11px]">
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setExpanded((v) => !v);
-                  }}
-                  className="text-[10px] text-[var(--accent)] hover:brightness-125 mb-1"
+                  type="button"
+                  onClick={() => setExpanded((v) => !v)}
+                  className="flex items-center gap-1.5 text-zinc-400 hover:text-zinc-200 font-mono-code"
                 >
-                  {"</>"} {task.snippets.length} snippet
-                  {task.snippets.length > 1 ? "s" : ""} {expanded ? "▲" : "▼"}
+                  <CodeIcon className="w-3.5 h-3.5 text-blue-400" />
+                  <span className="font-medium text-[10px]">
+                    {task.snippets.length} snippet{task.snippets.length > 1 ? "s" : ""}
+                  </span>
+                  <span className="text-zinc-600 text-[10px]">{expanded ? "▲" : "▼"}</span>
                 </button>
 
                 {snippetMatches && (
-                  <span
-                    className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--accent-20)] text-[var(--accent)] border border-[var(--accent-40)]"
-                    title="The search term appears inside a code snippet of this task"
-                  >
-                    snippet match
+                  <span className="text-[9px] font-mono-code px-1 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                    query matched
                   </span>
                 )}
 
-                <button
-                  onClick={handleSuggestTags}
-                  disabled={loadingTags}
-                  className="text-[10px] px-2 py-1 rounded bg-[var(--accent)] text-white hover:brightness-110"
-                >
-                  {loadingTags ? "Loading..." : "Suggest tags"}
-                </button>
-              </div>
-
-
-              <div className="flex gap-1 mb-2">
-                {task.snippets.map((snippet, index) => (
+                <div className="flex items-center gap-1">
                   <button
-                    key={index}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedSnippet(index);
-                    }}
-                    className="text-[10px] px-2 py-1 rounded bg-[var(--border-primary)]"
+                    type="button"
+                    onClick={handleSuggestTags}
+                    disabled={loadingTags}
+                    title="Generate tag suggestions with Gemini AI"
+                    className="flex items-center gap-1 text-[10px] font-mono-code text-blue-400 hover:text-blue-300 px-1.5 py-0.5 rounded bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 transition disabled:opacity-50"
                   >
-                    Snippet {index + 1}
+                    <SparklesIcon className="w-2.5 h-2.5" />
+                    <span>{loadingTags ? "Analyzing..." : "AI Tags"}</span>
                   </button>
-                ))}
+                </div>
               </div>
 
-              {suggestedTags.length > 0 && (
-                <div className="flex flex-wrap gap-1 mb-2">
-                  {suggestedTags.map((tag) => (
+              {/* Snippet Tabs if multiple */}
+              {task.snippets.length > 1 && (
+                <div className="flex border-b border-zinc-800/60 bg-zinc-950 px-1.5 py-0.5 gap-1 overflow-x-auto">
+                  {task.snippets.map((snippet, idx) => (
                     <button
-                      key={tag}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAddTag(tag);
-                      }}
-                      className="text-[10px] px-2 py-0.5 rounded bg-[var(--accent-20)] text-[var(--accent)] border border-[var(--accent-40)] hover:bg-[var(--accent-40)]"
+                      key={idx}
+                      type="button"
+                      onClick={() => setSelectedSnippet(idx)}
+                      className={`text-[9px] font-mono-code px-2 py-0.5 rounded transition ${
+                        selectedSnippet === idx
+                          ? "bg-zinc-800 text-zinc-200 font-medium"
+                          : "text-zinc-500 hover:text-zinc-400"
+                      }`}
                     >
-                      + {tag}
+                      {snippet.language || `tab ${idx + 1}`}
                     </button>
                   ))}
                 </div>
               )}
 
+              {/* AI suggested tags list */}
+              {suggestedTags.length > 0 && (
+                <div className="p-1.5 bg-blue-950/20 border-b border-blue-900/30 flex flex-wrap gap-1">
+                  <span className="text-[9px] font-mono-code text-blue-400 self-center">Add tag:</span>
+                  {suggestedTags.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => handleAddTag(tag)}
+                      className="text-[9px] font-mono-code px-1.5 py-0.5 rounded bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 border border-blue-500/40 transition"
+                    >
+                      +{tag}
+                    </button>
+                  ))}
+                </div>
+              )}
 
-              {/* Updated Snippet Block with Copy Button */}
+              {/* Code viewer */}
               {expanded && (
-                <>
-                  <div className="flex justify-end gap-1 mb-1">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setFontSize((s) => (s === 10 ? 13 : 10));
-                      }}
-                      title={
-                        fontSize === 10
-                          ? "Increase font size"
-                          : "Decrease font size"
-                      }
-                      aria-label={
-                        fontSize === 10
-                          ? "Increase snippet font size"
-                          : "Decrease snippet font size"
-                      }
-                      className="text-[10px] px-2 py-1 rounded bg-[var(--border-primary)] text-[var(--text-secondary)] hover:brightness-110"
-                    >
-                      {fontSize === 10 ? "A+" : "A-"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setWrapLines((on) => !on);
-                      }}
-                      aria-pressed={wrapLines}
-                      title={
-                        wrapLines
-                          ? "Long lines wrap; click to scroll instead"
-                          : "Long lines scroll; click to wrap instead"
-                      }
-                      className={`text-[10px] px-2 py-1 rounded hover:brightness-110 ${
-                        wrapLines
-                          ? "bg-[var(--accent)] text-white"
-                          : "bg-[var(--border-primary)] text-[var(--text-secondary)]"
-                      }`}
-                    >
-                      Wrap
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigator.clipboard.writeText(
-                          task.snippets[selectedSnippet].code
-                        );
-                      }}
-                      className="text-[10px] px-2 py-1 rounded bg-[var(--accent)] text-white hover:brightness-110"
-                    >
-                      Copy
-                    </button>
+                <div>
+                  <div className="flex items-center justify-between px-2 py-1 bg-zinc-950 text-[10px] border-b border-zinc-800/60">
+                    <span className="font-mono-code text-zinc-500 text-[9px] uppercase">
+                      {task.snippets[selectedSnippet]?.language || "code"}
+                    </span>
+                    <div className="flex items-center gap-1 font-mono-code">
+                      <button
+                        type="button"
+                        onClick={() => setWrapLines((w) => !w)}
+                        className={`px-1.5 py-0.5 rounded text-[9px] ${wrapLines ? "bg-zinc-800 text-zinc-200" : "text-zinc-500 hover:text-zinc-400"}`}
+                      >
+                        wrap
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const code = task.snippets[selectedSnippet]?.code || "";
+                          navigator.clipboard.writeText(code);
+                        }}
+                        className="px-1.5 py-0.5 rounded text-[9px] text-zinc-400 hover:text-zinc-200 bg-zinc-800/60 hover:bg-zinc-800 transition"
+                      >
+                        copy
+                      </button>
+                    </div>
                   </div>
-
-                  <div className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--border-primary)] text-[var(--text-secondary)] border border-[var(--border-primary)] w-fit mb-1.5">
-                    {task.snippets[selectedSnippet].language || "javascript"}
+                  <div className="max-h-48 overflow-auto text-[11px] font-mono-code">
+                    <SyntaxHighlighter
+                      language={task.snippets[selectedSnippet]?.language || "javascript"}
+                      style={vscDarkPlus}
+                      wrapLongLines={wrapLines}
+                      customStyle={{
+                        margin: 0,
+                        padding: "8px 12px",
+                        fontSize: `${fontSize}px`,
+                        background: "#08090d",
+                      }}
+                    >
+                      {task.snippets[selectedSnippet]?.code || ""}
+                    </SyntaxHighlighter>
                   </div>
-
-                  <SyntaxHighlighter
-                    language={
-                      task.snippets[selectedSnippet].language || "javascript"
-                    }
-                    style={isDark ? vscDarkPlus : vs}
-                    wrapLongLines={wrapLines}
-                    customStyle={{
-                      fontSize,
-                      borderRadius: 6,
-                      margin: 0,
-                      padding: "8px 10px",
-                    }}
-                  >
-                    {task.snippets[selectedSnippet].code}
-                  </SyntaxHighlighter>
-                </>
+                </div>
               )}
             </div>
           )}
 
-          {/* Tags + Priority */}
-          <div className="flex flex-wrap gap-1 mt-1">
-            {task.priority && (
-              <span
-                className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${PRIORITY_COLORS[task.priority]}`}
-              >
-                {task.priority}
-              </span>
-            )}
-            {task.tags?.map((tag) => {
-              const t = tag.trim(); // legacy rows may hold untrimmed tags
-              return (
-                <span
-                  key={t}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setActiveTag(activeTag === tag ? null : tag);
-                  }}
-                  className={`text-[10px] px-1.5 py-0.5 rounded cursor-pointer transition
-                    ${getTagColor(tag)}
-                    ${activeTag === tag
-                      ? "ring-1 ring-[var(--accent)]"
-                      : "hover:brightness-125"
-                    }`}
-                >
-                  {highlightMatch(
-                    t.length > 15 ? t.slice(0, 15) + "..." : t,
-                    searchQuery
-                  )}
-                </span>
-              );
-            })}
-          </div>
-
-          {/* Due date */}
-          {task.dueDate && (
-            <div
-              className={`mt-2 text-[10px] flex items-center gap-1.5 ${isOverdue ? "text-red-400" : "text-[var(--text-secondary)]"
-                }`}
-            >
-              <span>📅 {new Date(task.dueDate).toLocaleDateString()}</span>
-              {isDueToday && (
-                <span
-                  className="bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded px-1 py-0.5 leading-none font-medium"
-                  title="This task is due today"
-                >
-                  due today!
-                </span>
-              )}
-            </div>
-          )}
-          {task.estimate && (
-            <div className="mt-1 text-[10px] flex items-center gap-1.5 text-[var(--text-secondary)]">
-              <span>⏱️ {task.estimate}</span>
-            </div>
-          )}
-
-          {age >= 14 && task.status !== 'done' && (
-            <span className="mt-1 text-[10px] flex items-center gap-1.5 text-[var(--text-secondary)]"> 
-                🕰️ {age}d old
-            </span>
-          )}
-
-          {isStale && (
-  <span
-    className="mt-1 text-[10px] flex items-center gap-1.5 text-amber-400"
-    title={`No update in ${getDaysSinceUpdate(task.updatedAt)} days`}
-  >
-    ⚠️ stale
-  </span>
-)}
-
-          {/* Footer */}
-          <div className="flex items-center justify-between mt-2">
-            <div className="flex items-center gap-2 text-[var(--text-muted)] text-[10px]">
-              {/* Time tracker */}
+          {/* Footer Bar: Timer, Estimates, Assignee, Actions */}
+          <div className="flex items-center justify-between pt-1.5 mt-1 border-t border-zinc-800/60 text-[10px] font-mono-code text-zinc-500">
+            <div className="flex items-center gap-2.5">
+              {/* Lightweight active timer */}
               <button
+                type="button"
                 onClick={toggleTimer}
-                title={tracking ? "Pause timer" : "Start timer"}
-                className={`font-mono transition-colors ${
-                  tracking
-                    ? "text-green-400 animate-pulse"
-                    : "text-[#555] hover:text-[#888]"
+                title={tracking ? "Pause time tracker" : "Start time tracker"}
+                className={`inline-flex items-center gap-1 transition-colors px-1 py-0.5 rounded hover:bg-zinc-800 ${
+                  tracking ? "text-emerald-400 font-semibold animate-pulse" : "text-zinc-400 hover:text-zinc-200"
                 }`}
               >
-                {tracking ? "⏸" : "▶"} {formatTime(elapsed)}
+                {tracking ? <PauseIcon className="w-2.5 h-2.5" /> : <PlayIcon className="w-2.5 h-2.5" />}
+                <span>{formatTime(elapsed)}</span>
               </button>
+
+              {/* Pomodoro count */}
               {estimatedPomodoros && (
                 <span
-                  className={
-                    actualPomodoros > estimatedPomodoros
-                      ? "text-red-400"
-                      : "text-green-400"
-                  }
+                  title={`${actualPomodoros} of ${estimatedPomodoros} sessions completed`}
+                  className={`inline-flex items-center gap-1 ${
+                    actualPomodoros >= estimatedPomodoros ? "text-emerald-400 font-medium" : "text-zinc-400"
+                  }`}
                 >
-                  🍅 {actualPomodoros}/{estimatedPomodoros} sessions
+                  <TimerIcon className="w-2.5 h-2.5 text-zinc-500" />
+                  <span>{actualPomodoros}/{estimatedPomodoros}</span>
                 </span>
               )}
-              {task.snippets?.length > 0 && (
-                <span>📎 {task.snippets.length}</span>
+
+              {/* Estimate badge */}
+              {task.estimate && !estimatedPomodoros && (
+                <span className="inline-flex items-center gap-1 text-zinc-400">
+                  <ClockIcon className="w-2.5 h-2.5 text-zinc-500" />
+                  <span>{task.estimate}</span>
+                </span>
               )}
-              {task.seenBy?.length > 0 && (
-                <span>👀 {task.seenBy.length} seen</span>
-              )}
-              {task.createdAt && (
-                <span>🕐 {timeAgo(task.createdAt)}</span>
+
+              {/* Age / Stale warning */}
+              {isStale && (
+                <span className="text-amber-400 font-medium">stale</span>
               )}
             </div>
-            <div className="flex items-center gap-2">
+
+            <div className="flex items-center gap-1.5">
+              {/* Created relative time */}
+              {task.createdAt && (
+                <span className="text-zinc-600 text-[9px] hidden sm:inline">
+                  {timeAgo(task.createdAt)}
+                </span>
+              )}
+
+              {/* Assignee Avatar */}
+              {task.assignee?.name && (
+                <div
+                  title={`Assigned to ${task.assignee.name}`}
+                  className={`w-4 h-4 rounded-full ${getAvatarColor(task.assignee.name)} border border-zinc-900 flex items-center justify-center text-[8px] font-bold text-white shadow-sm`}
+                >
+                  {task.assignee.name[0].toUpperCase()}
+                </div>
+              )}
+
+              {/* Edit button */}
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   onSelect(task);
                 }}
-                aria-label="Edit task"
-                title="Edit task"
-                className="opacity-0 group-hover:opacity-100 text-[10px] px-2 py-1 rounded bg-gray-600 text-white hover:bg-gray-700 transition-opacity"
+                title="Edit task details"
+                className="opacity-0 group-hover:opacity-100 p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded transition"
               >
-                ✏️
+                <EditIcon className="w-3 h-3" />
               </button>
-
-              {task.assignee?.name && (
-                <div title={task.assignee.name} className={`w-5 h-5 rounded-full ${getAvatarColor(task.assignee.name)} flex items-center justify-center text-[9px] font-bold text-white`}>
-                  {task.assignee.name[0].toUpperCase()}
-                </div>
-              )}
-
-              {task.assigneeHistory?.length > 0 && (
-                <span
-                  title={`Previously: ${task.assigneeHistory.length} assignee(s)`}
-                  className="text-[10px] text-[var(--text-secondary)] flex items-center gap-0.5 cursor-default"
-                >
-                  👥 {task.assigneeHistory.length}
-                </span>
-              )}
             </div>
           </div>
-
-          {/* Last updated */}
-          
-          {task.updatedAt && (
-            <div className="mt-1 text-[10px] text-[var(--text-secondary)]">
-              ✏️ updated {timeAgo(task.updatedAt)}
-            </div>
-          )}
 
           {/* Context menu */}
           {contextMenu && (
@@ -651,7 +570,7 @@ const actualPomodoros = task.pomodoroCount || 0;
               onClick={(e) => e.stopPropagation()}
               onContextMenu={(e) => e.preventDefault()}
               style={{ top: contextMenu.y, left: contextMenu.x }}
-              className="fixed z-50 w-32 py-1 bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-lg shadow-lg"
+              className="fixed z-50 w-36 py-1 bg-[#15161e] border border-zinc-700/80 rounded-lg shadow-2xl text-xs font-sans"
             >
               <button
                 onClick={(e) => {
@@ -659,10 +578,25 @@ const actualPomodoros = task.pomodoroCount || 0;
                   closeContextMenu();
                   onSelect(task);
                 }}
-                className="w-full px-3 py-1.5 text-left text-xs text-[var(--text-primary)] hover:bg-[var(--border-primary)]"
+                className="w-full px-3 py-1.5 text-left text-zinc-200 hover:bg-zinc-800/80 flex items-center gap-2 transition"
               >
-                ✏️ Edit
+                <EditIcon className="w-3.5 h-3.5 text-zinc-400" />
+                <span>Edit</span>
               </button>
+
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDuplicate();
+                }}
+                className="w-full px-3 py-1.5 text-left text-zinc-200 hover:bg-zinc-800/80 flex items-center gap-2 transition"
+              >
+                <CopyIcon className="w-3.5 h-3.5 text-zinc-400" />
+                <span>Duplicate</span>
+              </button>
+
+              <div className="my-1 border-t border-zinc-800" />
+
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -671,18 +605,10 @@ const actualPomodoros = task.pomodoroCount || 0;
                     console.error("Failed to delete task:", err)
                   );
                 }}
-                className="w-full px-3 py-1.5 text-left text-xs text-red-400 hover:bg-red-500/10"
+                className="w-full px-3 py-1.5 text-left text-rose-400 hover:bg-rose-500/10 flex items-center gap-2 transition"
               >
-                🗑️ Delete
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDuplicate();
-                }}
-                className="w-full px-3 py-1.5 text-left text-xs text-[var(--text-primary)] hover:bg-[var(--border-primary)]"
-              >
-                📄 Duplicate
+                <TrashIcon className="w-3.5 h-3.5 text-rose-400" />
+                <span>Delete</span>
               </button>
             </div>
           )}
