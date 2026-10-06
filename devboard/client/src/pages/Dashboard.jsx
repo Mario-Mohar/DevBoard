@@ -67,10 +67,21 @@ const Dashboard = () => {
     setSearchQuery,
     tasks,
     addTask,
+    viewTask,
     activeTag,
     setActiveTag,
   } = useBoard();
   const { stars, loading: starsLoading } = useGithubStars();
+
+  const handleSelectTask = async (task) => {
+    setSelectedTask(task);
+    try {
+      const viewedTask = await viewTask(task._id);
+      if (viewedTask) setSelectedTask(viewedTask);
+    } catch (err) {
+      console.error("Failed to record task view:", err);
+    }
+  };
 
   useEffect(() => {
     document.title = "DevBoard — Developer Kanban";

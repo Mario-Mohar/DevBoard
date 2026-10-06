@@ -16,11 +16,38 @@ router.get("/", protect, async (req, res) => {
   }
 });
 
+// GET /api/tasks/:id — get one task and record the viewer once
+router.get("/:id", protect, async (req, res) => {
+  try {
+    let task = await Task.findOneAndUpdate(
+      { _id: req.params.id, seenBy: { $ne: req.user._id } },
+      { $addToSet: { seenBy: req.user._id } },
+      { new: true, timestamps: false },
+    );
+    const viewerWasAdded = Boolean(task);
+
+    if (!task) task = await Task.findById(req.params.id);
+    if (!task) return res.status(404).json({ message: "Task not found" });
+
+    await task.populate("assignee", "name email avatar");
+    await task.populate("assigneeHistory.user", "name email avatar");
+
+    const io = req.app.get("io");
+    if (viewerWasAdded && io) io.emit("task:updated", task);
+
+    res.json(task);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
 // POST /api/tasks — create task
 router.post("/", protect, async (req, res) => {
   try {
+    const taskData = { ...req.body };
+    delete taskData.seenBy;
     const task = await Task.create({
-      ...req.body,
+      ...taskData,
       tags: Task.sanitizeTags(req.body.tags),
     });
     res.status(201).json(task);
@@ -56,7 +83,9 @@ router.put("/:id", protect, async (req, res) => {
       });
     }
 
-    Object.assign(task, req.body);
+    const updates = { ...req.body };
+    delete updates.seenBy;
+    Object.assign(task, updates);
     if (req.body.tags !== undefined) {
       task.tags = Task.sanitizeTags(req.body.tags);
     }

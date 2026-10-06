@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useBoard } from "../context/BoardContext";
 import TaskModal from "../components/Task/TaskModal";
@@ -7,9 +7,16 @@ import { SearchIcon } from "../components/common/Icons";
 const TaskPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { allTasks, loading, updateTask } = useBoard();
+  const { allTasks, loading, updateTask, viewTask } = useBoard();
+  const [loadingTask, setLoadingTask] = useState(true);
 
-  if (loading) {
+  useEffect(() => {
+    viewTask(id)
+      .catch((err) => console.error("Failed to record task view:", err))
+      .finally(() => setLoadingTask(false));
+  }, [id]);
+
+  if (loading || loadingTask) {
     return (
       <div className="flex items-center justify-center h-screen bg-[#090a0e] text-zinc-500 font-mono-code text-xs">
         Resolving task #{id}...

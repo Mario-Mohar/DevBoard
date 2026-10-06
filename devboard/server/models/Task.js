@@ -43,6 +43,7 @@ const taskSchema = new mongoose.Schema(
       users: [{ type: mongoose.Schema.Types.ObjectId,
       ref: 'User' }]
     }],
+    seenBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     activity: [
       {
         action: String,

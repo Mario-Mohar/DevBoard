@@ -78,6 +78,28 @@ export const BoardProvider = ({ children }) => {
     }
   };
 
+  const viewTask = async (id) => {
+    if (user.token === "mock-token") {
+      const task = allTasks.find((item) => item._id === id);
+      if (!task) return null;
+
+      const seenBy = task.seenBy?.includes(user.id)
+        ? task.seenBy
+        : [...(task.seenBy || []), user.id];
+      const viewedTask = { ...task, seenBy };
+      setAllTasks((prev) =>
+        prev.map((item) => (item._id === id ? viewedTask : item)),
+      );
+      return viewedTask;
+    }
+
+    const { data } = await axios.get(`/api/tasks/${id}`, authHeaders());
+    setAllTasks((prev) =>
+      prev.map((task) => (task._id === id ? data : task)),
+    );
+    return data;
+  };
+
   useEffect(() => {
     if (user && user.token !== "mock-token") {
       fetchTasks();
@@ -264,6 +286,7 @@ export const BoardProvider = ({ children }) => {
         logout,
         logoutAll,
         fetchTasks,
+        viewTask,
         error,
         setError,
       }}
