@@ -74,6 +74,59 @@ body {
 
 /* Print styles */
 @media print {
+  /* Paper gets a light palette. On screen the board is near-black, and printed
+     as-is that is a page of solid ink. The variables cover everything styled
+     through var(--bg) / var(--text-*); the utilities below cover the rest. */
+  :root {
+    --bg: #ffffff;
+    --bg-card: #ffffff;
+    --bg-hover: #f4f4f5;
+    --bg-muted: #f4f4f5;
+    --bg-accent: #f4f4f5;
+    --bg-input: #ffffff;
+    --border-primary: #d4d4d8;
+    --border-subtle: #e4e4e7;
+    --border-highlight: #a1a1aa;
+    --text-primary: #111827;
+    --text-secondary: #374151;
+    --text-tertiary: #4b5563;
+    --text-muted: #6b7280;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #111827 !important;
+  }
+
+  /* Dark surfaces: zinc 700 to 950 and the near-black hex values of the
+     redesign (bg-[#090a0e], bg-[#121319], ...). Matching on the class prefix
+     keeps new shades covered without listing each one. */
+  [class*="bg-zinc-7"],
+  [class*="bg-zinc-8"],
+  [class*="bg-zinc-9"],
+  [class*="bg-[#0"],
+  [class*="bg-[#1"] {
+    background-color: #ffffff !important;
+  }
+
+  [class*="text-zinc-1"],
+  [class*="text-zinc-2"],
+  [class*="text-zinc-3"] {
+    color: #111827 !important;
+  }
+
+  [class*="text-zinc-4"],
+  [class*="text-zinc-5"],
+  [class*="text-zinc-6"] {
+    color: #4b5563 !important;
+  }
+
+  [class*="border-zinc-7"],
+  [class*="border-zinc-8"],
+  [class*="border-zinc-9"] {
+    border-color: #d4d4d8 !important;
+  }
+
   .no-print {
     display: none !important;
   }
