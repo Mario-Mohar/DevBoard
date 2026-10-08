@@ -5,6 +5,7 @@ import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useBoard } from "../../context/BoardContext";
 import { useSuggestTags } from "../../hooks/useSuggestTags";
 import { getAvatarColor } from "../../utils/avatarColor";
+import { timeAgo } from "../../utils/timeAgo";
 import {
   CodeIcon,
   CopyIcon,
@@ -77,17 +78,6 @@ const estimateToPomodoros = (estimate) => {
     "1d": 16,
   };
   return map[estimate] || null;
-};
-
-const timeAgo = (date) => {
-  const diff = Date.now() - new Date(date);
-  const mins = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  return `${days}d ago`;
 };
 
 const TaskCard = ({

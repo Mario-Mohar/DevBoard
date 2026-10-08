@@ -21,7 +21,8 @@ import {
   ChevronUpIcon,
   XIcon,
 } from "../components/common/Icons";
-import { openVisit, touchVisit, timeAgo } from "../utils/lastVisit";
+import { openVisit, touchVisit } from "../utils/lastVisit";
+import { timeAgo } from "../utils/timeAgo";
 
 const formatStars = (n) => {
   if (n === null || n === undefined) return null;
