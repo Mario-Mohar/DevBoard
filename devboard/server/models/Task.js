@@ -15,6 +15,12 @@ const taskSchema = new mongoose.Schema(
       enum: ["backlog", "inprogress", "review", "done"],
       default: "backlog",
     },
+    // Column the task was in before its last status change
+    previousStatus: {
+      type: String,
+      enum: ["backlog", "inprogress", "review", "done", null],
+      default: null,
+    },
     priority: {
       type: String,
       enum: ["low", "medium", "high"],

@@ -156,7 +156,17 @@ export const BoardProvider = ({ children }) => {
   const updateTask = async (id, updates) => {
     try {
       if (user.token === "mock-token") {
-        setAllTasks((prev) => prev.map((t) => (t._id === id ? { ...t, ...updates } : t)));
+        setAllTasks((prev) =>
+          prev.map((t) => {
+            if (t._id !== id) return t;
+            const moved = updates.status && updates.status !== t.status;
+            return {
+              ...t,
+              ...updates,
+              ...(moved && { previousStatus: t.status }),
+            };
+          }),
+        );
         return;
       }
       const { data } = await axios.put(
