@@ -77,7 +77,9 @@ router.put("/:id", protect, async (req, res) => {
       });
     }
 
-    if (req.body.status && req.body.status !== task.status) {
+    const statusChanged = req.body.status && req.body.status !== task.status;
+    const previousStatus = task.status;
+    if (statusChanged) {
       task.activity.push({
         action: `status changed to ${req.body.status}`,
       });
@@ -85,7 +87,9 @@ router.put("/:id", protect, async (req, res) => {
 
     const updates = { ...req.body };
     delete updates.seenBy;
+    delete updates.previousStatus;
     Object.assign(task, updates);
+    if (statusChanged) task.previousStatus = previousStatus;
     if (req.body.tags !== undefined) {
       task.tags = Task.sanitizeTags(req.body.tags);
     }
