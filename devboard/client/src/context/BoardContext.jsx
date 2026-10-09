@@ -93,7 +93,7 @@ export const BoardProvider = ({ children }) => {
       return viewedTask;
     }
 
-    const { data } = await axios.get(`/api/tasks/${id}`, authHeaders());
+    const { data } = await axios.get(`/api/v1/tasks/${id}`, authHeaders());
     setAllTasks((prev) =>
       prev.map((task) => (task._id === id ? data : task)),
     );
