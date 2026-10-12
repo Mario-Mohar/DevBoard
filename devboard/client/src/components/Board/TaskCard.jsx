@@ -249,7 +249,7 @@ const TaskCard = ({
               ? { borderLeftColor: task.labelColor }
               : {}),
           }}
-          className={`card group bg-[#121319] hover:bg-[#161821] border border-zinc-800/80 hover:border-zinc-700/90 rounded-lg p-3 cursor-pointer transition-all duration-150 relative select-none shadow-sm
+          className={`card group bg-[#121319] hover:bg-[#161821] border border-zinc-800/80 hover:border-zinc-700/90 rounded-lg p-3 cursor-pointer transition-all duration-150 relative select-none shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-zinc-300/70
             border-l-[3px] ${task.labelColor ? "" : STATUS_INDICATORS[task.status] || "border-l-zinc-700"}
             ${snapshot.isDragging ? "shadow-2xl shadow-blue-900/40 border-blue-500 scale-[1.02]" : ""}
             ${isOverdue ? "!border-rose-500/80 !border-l-rose-500" : ""}

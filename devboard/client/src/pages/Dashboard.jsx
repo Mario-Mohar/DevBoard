@@ -537,6 +537,14 @@ const Dashboard = () => {
                 <kbd className="bg-zinc-900 border border-zinc-700 px-2 py-0.5 rounded text-zinc-200">/</kbd>
               </div>
               <div className="flex items-center justify-between">
+                <span className="text-zinc-400">Move between tasks</span>
+                <kbd className="bg-zinc-900 border border-zinc-700 px-2 py-0.5 rounded text-zinc-200">←↑↓→</kbd>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-zinc-400">Open focused task</span>
+                <kbd className="bg-zinc-900 border border-zinc-700 px-2 py-0.5 rounded text-zinc-200">Enter</kbd>
+              </div>
+              <div className="flex items-center justify-between">
                 <span className="text-zinc-400">Close modal</span>
                 <kbd className="bg-zinc-900 border border-zinc-700 px-2 py-0.5 rounded text-zinc-200">ESC</kbd>
               </div>
