@@ -4,6 +4,8 @@ import Column from "./Column";
 import TaskModal from "../Task/TaskModal";
 import { useBoard } from "../../context/BoardContext";
 import confetti from "canvas-confetti";
+import { toast } from "react-toastify";
+import { columnLimit, isColumnFull } from "../../utils/columnLimits";
 import { LogoIcon, SearchIcon, PlusIcon, XIcon } from "../common/Icons";
 
 const COLUMNS = ["backlog", "inprogress", "review", "done"];
@@ -15,7 +17,7 @@ const KanbanBoard = ({
   priorityFilter = "all",
   focusMode = false,
 }) => {
-  const { tasks, updateTask, addTask, loading } = useBoard();
+  const { tasks, allTasks, updateTask, addTask, loading } = useBoard();
   const displayedTasks = filteredTasks ?? tasks;
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -102,6 +104,16 @@ const KanbanBoard = ({
       destination.droppableId === source.droppableId &&
       destination.index === source.index
     ) {
+      return;
+    }
+
+    // Checked before anything moves, so a refused drop leaves the board as it was
+    if (
+      destination.droppableId !== source.droppableId &&
+      isColumnFull(allTasks, destination.droppableId)
+    ) {
+      const limit = columnLimit(destination.droppableId);
+      toast.error(`That column is full (${limit}/${limit}), move a task on first`);
       return;
     }
 
