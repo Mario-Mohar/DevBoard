@@ -118,3 +118,21 @@ mongoose
     );
   })
   .catch((err) => console.error("❌ MongoDB error:", err));
+
+mongoose.connection.on("disconnected", () => {
+  console.log("⚠️ MongoDB disconnected! Reconnecting...");
+
+  setTimeout(() => {
+    mongoose.connect(process.env.MONGO_URI).catch((err) => {
+      console.error("❌ MongoDB reconnection failed:", err);
+    });
+  }, 5000);
+});
+
+mongoose.connection.on("reconnected", () => {
+  console.log("✅ MongoDB reconnected!");
+});
+
+mongoose.connection.on("error", (err) => {
+  console.error("❌ MongoDB error:", err);
+});
