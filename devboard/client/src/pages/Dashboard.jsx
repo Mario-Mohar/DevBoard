@@ -48,13 +48,13 @@ const formatCsvDate = (value) => {
 };
 
 const THEMES = {
-  blue:   { name: "Blue",   accent: "#3b82f6", bg: "#090a0e" },
+  blue: { name: "Blue", accent: "#3b82f6", bg: "#090a0e" },
   indigo: { name: "Indigo", accent: "#6366f1", bg: "#090a10" },
   purple: { name: "Purple", accent: "#8b5cf6", bg: "#0a0912" },
-  emerald:{ name: "Emerald",accent: "#10b981", bg: "#070e0b" },
-  amber:  { name: "Amber",  accent: "#f59e0b", bg: "#0f0d07" },
-  rose:   { name: "Rose",   accent: "#f43f5e", bg: "#10080b" },
-  cyan:   { name: "Cyan",   accent: "#06b6d4", bg: "#060e12" },
+  emerald: { name: "Emerald", accent: "#10b981", bg: "#070e0b" },
+  amber: { name: "Amber", accent: "#f59e0b", bg: "#0f0d07" },
+  rose: { name: "Rose", accent: "#f43f5e", bg: "#10080b" },
+  cyan: { name: "Cyan", accent: "#06b6d4", bg: "#060e12" },
 };
 
 const Dashboard = () => {
@@ -243,8 +243,8 @@ const Dashboard = () => {
   const completionRate =
     myTasks.length > 0
       ? Math.round(
-          (myTasks.filter((t) => t.status === "done").length / myTasks.length) * 100
-        )
+        (myTasks.filter((t) => t.status === "done").length / myTasks.length) * 100
+      )
       : 0;
 
   if (loading) {
@@ -317,13 +317,25 @@ const Dashboard = () => {
               }}
               onBlur={() => handleSearch(searchQuery)}
               placeholder="Search tasks, code, or tags..."
-              className="w-full bg-[#111218] border border-zinc-800/90 rounded-lg pl-9 pr-14 py-1.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition font-mono-code"
+              className="w-full bg-[#111218] border border-zinc-800/90 rounded-lg pl-9 pr-8 py-1.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition font-mono-code"
             />
-            <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none">
-              <kbd className="text-[10px] font-mono-code text-zinc-500 bg-zinc-900 border border-zinc-800 px-1 rounded">
-                /
-              </kbd>
-            </div>
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-[#555] hover:text-[#aaa] transition text-xs"
+                aria-label="Clear search"
+              >
+                ✕
+              </button>
+            )}
+            {!searchQuery && (
+              <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none">
+                <kbd className="text-[10px] font-mono-code text-zinc-500 bg-zinc-900 border border-zinc-800 px-1 rounded">
+                  /
+                </kbd>
+              </div>
+            )}
           </div>
         </div>
 
@@ -362,11 +374,10 @@ const Dashboard = () => {
             type="button"
             onClick={() => setFocusMode((v) => !v)}
             title={focusMode ? "Disable focus mode" : "Focus mode (hide completed)"}
-            className={`p-1.5 rounded-lg border text-xs transition ${
-              focusMode
+            className={`p-1.5 rounded-lg border text-xs transition ${focusMode
                 ? "bg-blue-500/10 border-blue-500 text-blue-400"
                 : "border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
-            }`}
+              }`}
           >
             <TargetIcon className="w-3.5 h-3.5" />
           </button>
@@ -410,9 +421,8 @@ const Dashboard = () => {
                 onClick={() => setTheme(name)}
                 style={{ backgroundColor: t.accent }}
                 title={`${t.name} theme`}
-                className={`w-3 h-3 rounded-full transition-transform ${
-                  theme === name ? "ring-2 ring-white scale-110" : "opacity-60 hover:opacity-100"
-                }`}
+                className={`w-3 h-3 rounded-full transition-transform ${theme === name ? "ring-2 ring-white scale-110" : "opacity-60 hover:opacity-100"
+                  }`}
               />
             ))}
           </div>
