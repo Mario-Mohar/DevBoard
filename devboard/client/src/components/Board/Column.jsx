@@ -53,6 +53,8 @@ const Column = ({
   const [sorted, setSorted] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [batchTag, setBatchTag] = useState("");
+  const [tagging, setTagging] = useState(false);
   const [animate, setAnimate] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
@@ -98,12 +100,11 @@ const Column = ({
   const toggleSelectionMode = () => {
     if (selectionMode) {
       setSelectedIds(new Set());
+      setBatchTag("");
     }
 
     setSelectionMode((value) => !value);
   };
-
-
 
   const toggleSelect = (id) => {
     setSelectedIds((prev) => {
@@ -117,7 +118,6 @@ const Column = ({
     });
   };
 
-
   const handleMoveTo = async (target) => {
     const idsToMove = [...selectedIds];
 
@@ -128,19 +128,17 @@ const Column = ({
     console.log("Bulk move started:", { target, idsToMove });
 
     const targetTasks = allTasks.filter(
-      (task) => String(task.status) === String(target)
+      (task) => String(task.status) === String(target),
     );
 
     let base = targetTasks.reduce(
       (max, task) => Math.max(max, Number(task.order) || 0),
-      -1
+      -1,
     );
 
     try {
       const tasksToMove = idsToMove
-        .map((id) =>
-          allTasks.find((task) => String(task._id) === String(id))
-        )
+        .map((id) => allTasks.find((task) => String(task._id) === String(id)))
         .filter(Boolean);
 
       if (tasksToMove.length === 0) {
@@ -156,7 +154,7 @@ const Column = ({
             status: target,
             order: base,
           });
-        })
+        }),
       );
 
       if (target === "done") {
@@ -170,19 +168,52 @@ const Column = ({
     }
   };
 
+  const handleBatchTag = async (e) => {
+    e.preventDefault();
 
-  const handleDeleteSelected = async () => {
-    if (!selectionMode || selectedIds.size === 0) return;
-    const count = selectedIds.size;
-    if (!window.confirm(`Delete ${count} ${count === 1 ? "task" : "tasks"}?`)) return;
+    const tag = batchTag.trim();
 
-    const ids = [...selectedIds];
-    const results = await Promise.allSettled(ids.map((id) => deleteTask(String(id))));
+    if (!tag || selectedIds.size === 0 || tagging) {
+      return;
+    }
 
-    // keep the ones that failed selected so they can be retried
-    const failed = ids.filter((_, i) => results[i].status === "rejected");
-    setSelectedIds(new Set(failed));
-    if (failed.length === 0) setSelectionMode(false);
+    const selectedTasks = [...selectedIds]
+      .map((id) => allTasks.find((task) => String(task._id) === String(id)))
+      .filter(Boolean);
+
+    if (selectedTasks.length === 0) {
+      return;
+    }
+
+    setTagging(true);
+
+    try {
+      await Promise.all(
+        selectedTasks.map((task) => {
+          const existingTags = Array.isArray(task.tags) ? task.tags : [];
+
+          // Keep existing tags and avoid duplicates.
+          const alreadyHasTag = existingTags.some(
+            (existingTag) =>
+              String(existingTag).trim().toLowerCase() === tag.toLowerCase(),
+          );
+
+          if (alreadyHasTag) {
+            return Promise.resolve();
+          }
+
+          return updateTask(String(task._id), {
+            tags: [...existingTags, tag],
+          });
+        }),
+      );
+
+      setBatchTag("");
+    } catch (error) {
+      console.error("Bulk tag update failed:", error);
+    } finally {
+      setTagging(false);
+    }
   };
 
   useEffect(() => {
@@ -278,7 +309,8 @@ const Column = ({
               >
                 Done
               </button>
-              <select
+              <div className="flex flex-col gap-4">
+                   <select
                 defaultValue=""
                 onChange={(e) => handleMoveTo(e.target.value)}
                 className="text-[12px] font-mono-code bg-zinc-900 border border-zinc-700 text-zinc-300 rounded px-1.5 py-0.5"
@@ -294,26 +326,46 @@ const Column = ({
                     </option>
                   ))}
               </select>
-              <button
-                type="button"
-                onClick={handleDeleteSelected}
-                disabled={selectedIds.size === 0}
-                title="Delete selected tasks"
-                className="text-[10px] font-mono-code text-red-400/70 hover:text-red-400 border border-red-500/20 rounded px-1.5 py-0.5 transition disabled:opacity-40 disabled:pointer-events-none"
+
+              <form
+                onSubmit={handleBatchTag}
+                className="flex items-center gap-4"
               >
-                Delete {selectedIds.size}
-              </button>
+                <input
+                  type="text"
+                  value={batchTag}
+                  onChange={(e) => setBatchTag(e.target.value)}
+                  placeholder="Add tag..."
+                  aria-label="Tag to apply to selected tasks"
+                  disabled={tagging || selectedIds.size === 0}
+                  className="w-28 text-[12px] font-mono-code bg-zinc-900 border border-zinc-700 text-zinc-300 rounded px-2 py-1 outline-none focus:border-blue-500 disabled:opacity-50"
+                />
+
+                <button
+                  type="submit"
+                  disabled={
+                    tagging || selectedIds.size === 0 || !batchTag.trim()
+                  }
+                  className="text-[11px] font-mono-code px-2 py-1 rounded border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {tagging ? "Adding..." : `Tag ${selectedIds.size}`}
+                </button>
+              </form>
+
+              </div>
+           
             </div>
           ) : (
             <div className="flex items-center gap-2 min-w-0">
               <span className={`w-2 h-2 rounded-full shrink-0 ${config.dot}`} />
-              <span className="text-xs font-semibold uppercase tracking-wider text-zinc-200 truncate font-mono-code max-w-[120px]" >
+              <span className="text-xs font-semibold uppercase tracking-wider text-zinc-200 truncate font-mono-code max-w-[120px]" title={config.label}>
                 {config.label}
               </span>
 
               <span
-                className={`text-[11px] font-mono-code px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-400 border border-zinc-700/60 transition-transform ${animate ? "scale-110" : ""
-                  }`}
+                className={`text-[11px] font-mono-code px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-400 border border-zinc-700/60 transition-transform ${
+                  animate ? "scale-110" : ""
+                }`}
               >
                 {tasks.length}
               </span>
@@ -328,8 +380,6 @@ const Column = ({
                   <span>{blockedCount}</span>
                 </span>
               )}
-
-
 
               {/* Priority Badges in Header */}
               {priorities.high > 0 && (
