@@ -46,6 +46,13 @@ const STATUS_INDICATORS = {
   done: "border-l-emerald-500",
 };
 
+const STATUS_LABELS = {
+  backlog: "Backlog",
+  inprogress: "In Progress",
+  review: "In Review",
+  done: "Completed",
+};
+
 // Search escaping
 const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -512,6 +519,16 @@ const TaskCard = ({
                 <span className="inline-flex items-center gap-1 text-zinc-400">
                   <ClockIcon className="w-2.5 h-2.5 text-zinc-500" />
                   <span>{task.estimate}</span>
+                </span>
+              )}
+
+              {/* Column the task was moved from */}
+              {task.previousStatus && task.previousStatus !== task.status && (
+                <span
+                  title={`Moved here from ${STATUS_LABELS[task.previousStatus] || task.previousStatus}`}
+                  className="text-zinc-500"
+                >
+                  ← from {STATUS_LABELS[task.previousStatus] || task.previousStatus}
                 </span>
               )}
 

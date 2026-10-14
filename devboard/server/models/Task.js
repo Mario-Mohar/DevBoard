@@ -15,6 +15,12 @@ const taskSchema = new mongoose.Schema(
       enum: ["backlog", "inprogress", "review", "done"],
       default: "backlog",
     },
+    // Column the task was in before its last status change
+    previousStatus: {
+      type: String,
+      enum: ["backlog", "inprogress", "review", "done", null],
+      default: null,
+    },
     priority: {
       type: String,
       enum: ["low", "medium", "high"],
@@ -30,6 +36,13 @@ const taskSchema = new mongoose.Schema(
       {
         user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
         assignedAt: { type: Date, default: Date.now },
+      },
+    ],
+    // Earlier titles, oldest first; the current one stays in `title`
+    titleHistory: [
+      {
+        title: String,
+        changedAt: { type: Date, default: Date.now },
       },
     ],
     dueDate: { type: Date },
@@ -50,9 +63,15 @@ const taskSchema = new mongoose.Schema(
         timestamp: { type: Date, default: Date.now },
       },
     ],
+    // Tasks that have to be finished before this one
+    blockedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "Task" }],
   },
   { timestamps: true },
 );
+
+// GET /api/tasks returns every task sorted by order; without an index MongoDB
+// sorts the whole collection in memory on each board load.
+taskSchema.index({ order: 1 });
 
 // Normalize tags at the API boundary: trim whitespace, drop empties, dedupe.
 // Tags arrive from the modal, GitHub import, and AI suggestions — whitespace

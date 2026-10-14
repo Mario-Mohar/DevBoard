@@ -48,7 +48,7 @@ const Column = ({
   isActive,
   columns = [],
 }) => {
-  const { tasks: allTasks, allTasks: unfilteredTasks, updateTask } = useBoard();
+  const { tasks: allTasks, allTasks: unfilteredTasks, updateTask, deleteTask } = useBoard();
 
   const [sorted, setSorted] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
@@ -413,7 +413,7 @@ const Column = ({
               <button
                 type="button"
                 onClick={toggleSelectionMode}
-                title="Select multiple tasks to move"
+                title="Select multiple tasks to move or delete"
                 className="text-[10px] font-mono-code text-zinc-500 hover:text-zinc-300 px-1.5 py-0.5 rounded hover:bg-zinc-800 transition"
               >
                 Select

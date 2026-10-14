@@ -77,7 +77,18 @@ router.put("/:id", protect, async (req, res) => {
       });
     }
 
-    if (req.body.status && req.body.status !== task.status) {
+    // Keep the old title when it is replaced by a different one
+    if (
+      typeof req.body.title === "string" &&
+      req.body.title.trim() &&
+      req.body.title.trim() !== task.title
+    ) {
+      task.titleHistory.push({ title: task.title, changedAt: new Date() });
+    }
+
+    const statusChanged = req.body.status && req.body.status !== task.status;
+    const previousStatus = task.status;
+    if (statusChanged) {
       task.activity.push({
         action: `status changed to ${req.body.status}`,
       });
@@ -85,7 +96,10 @@ router.put("/:id", protect, async (req, res) => {
 
     const updates = { ...req.body };
     delete updates.seenBy;
+    delete updates.previousStatus;
+    delete updates.titleHistory;
     Object.assign(task, updates);
+    if (statusChanged) task.previousStatus = previousStatus;
     if (req.body.tags !== undefined) {
       task.tags = Task.sanitizeTags(req.body.tags);
     }
@@ -111,6 +125,11 @@ router.delete("/:id", protect, async (req, res) => {
   try {
     const task = await Task.findByIdAndDelete(req.params.id);
     if (!task) return res.status(404).json({ message: "Task not found" });
+    // A deleted task can't block anything anymore
+    await Task.updateMany(
+      { blockedBy: task._id },
+      { $pull: { blockedBy: task._id } },
+    );
     res.json({ message: "Task deleted" });
   } catch (err) {
     res.status(500).json({ message: err.message });
