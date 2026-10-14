@@ -86,22 +86,22 @@ const Column = ({
     });
   };
 
-const fireConfetti = () => {
-  confetti({
-    particleCount: 120,
-    spread: 70,
-    origin: { y: 0.65 },
-    colors: ["#22c55e", "#3b82f6", "#facc15", "#a78bfa"],
-  });
-};
+  const fireConfetti = () => {
+    confetti({
+      particleCount: 120,
+      spread: 70,
+      origin: { y: 0.65 },
+      colors: ["#22c55e", "#3b82f6", "#facc15", "#a78bfa"],
+    });
+  };
 
-const toggleSelectionMode = () => {
-  if (selectionMode) {
-    setSelectedIds(new Set());
-  }
+  const toggleSelectionMode = () => {
+    if (selectionMode) {
+      setSelectedIds(new Set());
+    }
 
-  setSelectionMode((value) => !value);
-};
+    setSelectionMode((value) => !value);
+  };
 
 
 
@@ -117,58 +117,58 @@ const toggleSelectionMode = () => {
     });
   };
 
-  
-const handleMoveTo = async (target) => {
-  const idsToMove = [...selectedIds];
 
-  if (!selectionMode || idsToMove.length === 0 || target === columnId) {
-    return;
-  }
+  const handleMoveTo = async (target) => {
+    const idsToMove = [...selectedIds];
 
-  console.log("Bulk move started:", { target, idsToMove });
-
-  const targetTasks = allTasks.filter(
-    (task) => String(task.status) === String(target)
-  );
-
-  let base = targetTasks.reduce(
-    (max, task) => Math.max(max, Number(task.order) || 0),
-    -1
-  );
-
-  try {
-    const tasksToMove = idsToMove
-      .map((id) =>
-        allTasks.find((task) => String(task._id) === String(id))
-      )
-      .filter(Boolean);
-
-    if (tasksToMove.length === 0) {
-      console.error("No selected tasks matched allTasks.");
+    if (!selectionMode || idsToMove.length === 0 || target === columnId) {
       return;
     }
 
-    await Promise.all(
-      tasksToMove.map((task) => {
-        base += 1;
+    console.log("Bulk move started:", { target, idsToMove });
 
-        return updateTask(String(task._id), {
-          status: target,
-          order: base,
-        });
-      })
+    const targetTasks = allTasks.filter(
+      (task) => String(task.status) === String(target)
     );
 
-    if (target === "done") {
-      fireConfetti();
-    }
+    let base = targetTasks.reduce(
+      (max, task) => Math.max(max, Number(task.order) || 0),
+      -1
+    );
 
-    setSelectedIds(new Set());
-    setSelectionMode(false);
-  } catch (error) {
-    console.error("Bulk move failed:", error);
-  }
-};
+    try {
+      const tasksToMove = idsToMove
+        .map((id) =>
+          allTasks.find((task) => String(task._id) === String(id))
+        )
+        .filter(Boolean);
+
+      if (tasksToMove.length === 0) {
+        console.error("No selected tasks matched allTasks.");
+        return;
+      }
+
+      await Promise.all(
+        tasksToMove.map((task) => {
+          base += 1;
+
+          return updateTask(String(task._id), {
+            status: target,
+            order: base,
+          });
+        })
+      );
+
+      if (target === "done") {
+        fireConfetti();
+      }
+
+      setSelectedIds(new Set());
+      setSelectionMode(false);
+    } catch (error) {
+      console.error("Bulk move failed:", error);
+    }
+  };
 
 
   const handleDeleteSelected = async () => {
@@ -194,9 +194,9 @@ const handleMoveTo = async (target) => {
   const displayTasks = (
     sorted
       ? [...tasks].sort((a, b) => {
-          const order = { high: 0, medium: 1, low: 2 };
-          return (order[a.priority] ?? 3) - (order[b.priority] ?? 3);
-        })
+        const order = { high: 0, medium: 1, low: 2 };
+        return (order[a.priority] ?? 3) - (order[b.priority] ?? 3);
+      })
       : [...tasks]
   ).sort(
     (a, b) => (pinnedIds.has(b._id) ? 1 : 0) - (pinnedIds.has(a._id) ? 1 : 0),
@@ -250,9 +250,8 @@ const handleMoveTo = async (target) => {
   );
   return (
     <div
-      className={`flex flex-col w-full md:w-72 flex-shrink-0 transition-all ${
-        isActive ? "ring-1 ring-blue-500/50" : ""
-      }`}
+      className={`flex flex-col w-full md:w-72 flex-shrink-0 transition-all ${isActive ? "ring-1 ring-blue-500/50" : ""
+        }`}
     >
       {/* Column Header */}
       <div className="flex items-center justify-between px-2 py-2 mb-2 bg-[#0d0e13] border border-zinc-800/80 rounded-lg">
@@ -281,7 +280,7 @@ const handleMoveTo = async (target) => {
               </button>
               <select
                 defaultValue=""
-              onChange={(e) => handleMoveTo(e.target.value)}
+                onChange={(e) => handleMoveTo(e.target.value)}
                 className="text-[12px] font-mono-code bg-zinc-900 border border-zinc-700 text-zinc-300 rounded px-1.5 py-0.5"
               >
                 <option value="" disabled>
@@ -308,28 +307,27 @@ const handleMoveTo = async (target) => {
           ) : (
             <div className="flex items-center gap-2 min-w-0">
               <span className={`w-2 h-2 rounded-full shrink-0 ${config.dot}`} />
-              <span className="text-xs font-semibold uppercase tracking-wider text-zinc-200 truncate font-mono-code">
+              <span className="text-xs font-semibold uppercase tracking-wider text-zinc-200 truncate font-mono-code max-w-[120px]" >
                 {config.label}
               </span>
-             
-          <span
-            className={`text-[11px] font-mono-code px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-400 border border-zinc-700/60 transition-transform ${
-              animate ? "scale-110" : ""
-            }`}
-          >
-            {tasks.length}
-          </span>
 
-{blockedCount > 0 && (
-  <span
-    title={`${blockedCount} blocked task${blockedCount === 1 ? "" : "s"}`}
-    aria-label={`${blockedCount} blocked tasks`}
-    className="inline-flex shrink-0 items-center gap-1 rounded-md border border-rose-500/20 bg-rose-500/[0.08] px-1.5 py-0.5 text-[10px] font-mono-code text-rose-400"
-  >
-    <span aria-hidden="true">🚫</span>
-    <span>{blockedCount}</span>
-  </span>
-)}
+              <span
+                className={`text-[11px] font-mono-code px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-400 border border-zinc-700/60 transition-transform ${animate ? "scale-110" : ""
+                  }`}
+              >
+                {tasks.length}
+              </span>
+
+              {blockedCount > 0 && (
+                <span
+                  title={`${blockedCount} blocked task${blockedCount === 1 ? "" : "s"}`}
+                  aria-label={`${blockedCount} blocked tasks`}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-md border border-rose-500/20 bg-rose-500/[0.08] px-1.5 py-0.5 text-[10px] font-mono-code text-rose-400"
+                >
+                  <span aria-hidden="true">🚫</span>
+                  <span>{blockedCount}</span>
+                </span>
+              )}
 
 
 
@@ -375,11 +373,10 @@ const handleMoveTo = async (target) => {
               type="button"
               onClick={() => setSorted((v) => !v)}
               title={sorted ? "Restore default order" : "Sort by priority"}
-              className={`text-[10px] font-mono-code px-1.5 py-0.5 rounded transition ${
-                sorted
+              className={`text-[10px] font-mono-code px-1.5 py-0.5 rounded transition ${sorted
                   ? "bg-zinc-800 text-blue-400"
                   : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
-              }`}
+                }`}
             >
               Sort
             </button>
@@ -411,11 +408,10 @@ const handleMoveTo = async (target) => {
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`flex flex-col gap-2 rounded-xl p-2 transition-colors flex-1 min-h-[450px] bg-[#0c0d12]/50 border border-zinc-900 ${
-              snapshot.isDraggingOver
+            className={`flex flex-col gap-2 rounded-xl p-2 transition-colors flex-1 min-h-[450px] bg-[#0c0d12]/50 border border-zinc-900 ${snapshot.isDraggingOver
                 ? "bg-blue-950/15 border-blue-500/30 ring-1 ring-blue-500/20"
                 : ""
-            }`}
+              }`}
           >
             {collapsed ? (
               <div className="flex items-center justify-center text-center p-3 text-xs text-zinc-500 border border-dashed border-zinc-800 rounded-lg font-mono-code">
