@@ -3,7 +3,13 @@ import { Droppable } from "@hello-pangea/dnd";
 import TaskCard from "./TaskCard";
 import { useBoard } from "../../context/BoardContext";
 import { getAvatarColor } from "../../utils/avatarColor";
-import { PlusIcon, CodeIcon, ChevronDownIcon, ChevronRightIcon } from "../common/Icons";
+import {
+  PlusIcon,
+  CodeIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+} from "../common/Icons";
+import confetti from "canvas-confetti";
 
 const COLUMN_CONFIG = {
   backlog: {
@@ -47,6 +53,8 @@ const Column = ({
   const [sorted, setSorted] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [batchTag, setBatchTag] = useState("");
+  const [tagging, setTagging] = useState(false);
   const [animate, setAnimate] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
@@ -55,7 +63,7 @@ const Column = ({
       return new Set(
         tasks
           .filter((task) => localStorage.getItem(`pin_${task._id}`) === "true")
-          .map((task) => task._id)
+          .map((task) => task._id),
       );
     } catch {
       return new Set();
@@ -80,8 +88,21 @@ const Column = ({
     });
   };
 
+  const fireConfetti = () => {
+    confetti({
+      particleCount: 120,
+      spread: 70,
+      origin: { y: 0.65 },
+      colors: ["#22c55e", "#3b82f6", "#facc15", "#a78bfa"],
+    });
+  };
+
   const toggleSelectionMode = () => {
-    if (selectionMode) setSelectedIds(new Set());
+    if (selectionMode) {
+      setSelectedIds(new Set());
+      setBatchTag("");
+    }
+
     setSelectionMode((value) => !value);
   };
 
@@ -98,30 +119,101 @@ const Column = ({
   };
 
   const handleMoveTo = async (target) => {
-    if (!selectionMode || selectedIds.size === 0 || target === columnId) return;
+    const idsToMove = [...selectedIds];
+
+    if (!selectionMode || idsToMove.length === 0 || target === columnId) {
+      return;
+    }
+
+    console.log("Bulk move started:", { target, idsToMove });
 
     const targetTasks = allTasks.filter(
-      (task) => String(task.status) === String(target)
+      (task) => String(task.status) === String(target),
     );
 
     let base = targetTasks.reduce(
       (max, task) => Math.max(max, Number(task.order) || 0),
-      -1
+      -1,
     );
 
-    const updates = [...selectedIds].map((id) => {
-      const task = allTasks.find((t) => String(t._id) === String(id));
-      if (!task) return null;
-      base += 1;
-      return updateTask(String(task._id), {
-        status: target,
-        order: base,
-      });
-    });
+    try {
+      const tasksToMove = idsToMove
+        .map((id) => allTasks.find((task) => String(task._id) === String(id)))
+        .filter(Boolean);
 
-    await Promise.all(updates);
-    setSelectedIds(new Set());
-    setSelectionMode(false);
+      if (tasksToMove.length === 0) {
+        console.error("No selected tasks matched allTasks.");
+        return;
+      }
+
+      await Promise.all(
+        tasksToMove.map((task) => {
+          base += 1;
+
+          return updateTask(String(task._id), {
+            status: target,
+            order: base,
+          });
+        }),
+      );
+
+      if (target === "done") {
+        fireConfetti();
+      }
+
+      setSelectedIds(new Set());
+      setSelectionMode(false);
+    } catch (error) {
+      console.error("Bulk move failed:", error);
+    }
+  };
+
+  const handleBatchTag = async (e) => {
+    e.preventDefault();
+
+    const tag = batchTag.trim();
+
+    if (!tag || selectedIds.size === 0 || tagging) {
+      return;
+    }
+
+    const selectedTasks = [...selectedIds]
+      .map((id) => allTasks.find((task) => String(task._id) === String(id)))
+      .filter(Boolean);
+
+    if (selectedTasks.length === 0) {
+      return;
+    }
+
+    setTagging(true);
+
+    try {
+      await Promise.all(
+        selectedTasks.map((task) => {
+          const existingTags = Array.isArray(task.tags) ? task.tags : [];
+
+          // Keep existing tags and avoid duplicates.
+          const alreadyHasTag = existingTags.some(
+            (existingTag) =>
+              String(existingTag).trim().toLowerCase() === tag.toLowerCase(),
+          );
+
+          if (alreadyHasTag) {
+            return Promise.resolve();
+          }
+
+          return updateTask(String(task._id), {
+            tags: [...existingTags, tag],
+          });
+        }),
+      );
+
+      setBatchTag("");
+    } catch (error) {
+      console.error("Bulk tag update failed:", error);
+    } finally {
+      setTagging(false);
+    }
   };
 
   useEffect(() => {
@@ -138,9 +230,7 @@ const Column = ({
         })
       : [...tasks]
   ).sort(
-    (a, b) =>
-      (pinnedIds.has(b._id) ? 1 : 0) -
-      (pinnedIds.has(a._id) ? 1 : 0)
+    (a, b) => (pinnedIds.has(b._id) ? 1 : 0) - (pinnedIds.has(a._id) ? 1 : 0),
   );
 
   const totalSnippets = useMemo(
@@ -148,12 +238,12 @@ const Column = ({
       (unfilteredTasks || [])
         .filter((task) => task.status === columnId)
         .reduce((sum, task) => sum + (task.snippets?.length || 0), 0),
-    [unfilteredTasks, columnId]
+    [unfilteredTasks, columnId],
   );
 
   const priorities = useMemo(() => {
     const inColumn = (unfilteredTasks || []).filter(
-      (task) => task.status === columnId
+      (task) => task.status === columnId,
     );
     return {
       high: inColumn.filter((task) => task.priority === "high").length,
@@ -171,7 +261,10 @@ const Column = ({
       if (!byId.has(person._id)) byId.set(person._id, person);
     }
     const all = [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
-    return { shown: all.slice(0, ASSIGNEES_SHOWN), extra: all.slice(ASSIGNEES_SHOWN) };
+    return {
+      shown: all.slice(0, ASSIGNEES_SHOWN),
+      extra: all.slice(ASSIGNEES_SHOWN),
+    };
   }, [unfilteredTasks, columnId]);
 
   const config = COLUMN_CONFIG[columnId] || {
@@ -182,6 +275,10 @@ const Column = ({
 
   const isOverLimit = columnId === "inprogress" && tasks.length > WIP_LIMIT;
 
+  const blockedCount = useMemo(
+    () => (tasks || []).filter((task) => task.blockedBy?.length > 0).length,
+    [tasks],
+  );
   return (
     <div
       className={`flex flex-col w-full md:w-72 flex-shrink-0 transition-all ${
@@ -197,7 +294,11 @@ const Column = ({
             title={collapsed ? "Expand column" : "Collapse column"}
             className="text-zinc-500 hover:text-zinc-300 transition p-0.5"
           >
-            {collapsed ? <ChevronRightIcon className="w-3.5 h-3.5" /> : <ChevronDownIcon className="w-3.5 h-3.5" />}
+            {collapsed ? (
+              <ChevronRightIcon className="w-3.5 h-3.5" />
+            ) : (
+              <ChevronDownIcon className="w-3.5 h-3.5" />
+            )}
           </button>
 
           {selectionMode ? (
@@ -209,18 +310,51 @@ const Column = ({
               >
                 Done
               </button>
-              <select
+              <div className="flex flex-col gap-4">
+                   <select
                 defaultValue=""
                 onChange={(e) => handleMoveTo(e.target.value)}
-                className="text-[10px] font-mono-code bg-zinc-900 border border-zinc-700 text-zinc-300 rounded px-1.5 py-0.5"
+                className="text-[12px] font-mono-code bg-zinc-900 border border-zinc-700 text-zinc-300 rounded px-1.5 py-0.5"
               >
-                <option value="" disabled>Move {selectedIds.size} to…</option>
-                {columns.filter((c) => c !== columnId).map((c) => (
-                  <option key={c} value={c}>
-                    {COLUMN_CONFIG[c]?.label || c}
-                  </option>
-                ))}
+                <option value="" disabled>
+                  Move {selectedIds.size} to…
+                </option>
+                {columns
+                  .filter((c) => c !== columnId)
+                  .map((c) => (
+                    <option key={c} value={c}>
+                      {COLUMN_CONFIG[c]?.label || c}
+                    </option>
+                  ))}
               </select>
+
+              <form
+                onSubmit={handleBatchTag}
+                className="flex items-center gap-4"
+              >
+                <input
+                  type="text"
+                  value={batchTag}
+                  onChange={(e) => setBatchTag(e.target.value)}
+                  placeholder="Add tag..."
+                  aria-label="Tag to apply to selected tasks"
+                  disabled={tagging || selectedIds.size === 0}
+                  className="w-28 text-[12px] font-mono-code bg-zinc-900 border border-zinc-700 text-zinc-300 rounded px-2 py-1 outline-none focus:border-blue-500 disabled:opacity-50"
+                />
+
+                <button
+                  type="submit"
+                  disabled={
+                    tagging || selectedIds.size === 0 || !batchTag.trim()
+                  }
+                  className="text-[11px] font-mono-code px-2 py-1 rounded border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {tagging ? "Adding..." : `Tag ${selectedIds.size}`}
+                </button>
+              </form>
+
+              </div>
+           
             </div>
           ) : (
             <div className="flex items-center gap-2 min-w-0">
@@ -228,13 +362,25 @@ const Column = ({
               <span className="text-xs font-semibold uppercase tracking-wider text-zinc-200 truncate font-mono-code">
                 {config.label}
               </span>
+
               <span
-                className={`text-[11px] font-mono-code px-1.5 py-0.2 rounded bg-zinc-800/80 text-zinc-400 border border-zinc-700/60 transition-transform ${
+                className={`text-[11px] font-mono-code px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-400 border border-zinc-700/60 transition-transform ${
                   animate ? "scale-110" : ""
                 }`}
               >
                 {tasks.length}
               </span>
+
+              {blockedCount > 0 && (
+                <span
+                  title={`${blockedCount} blocked task${blockedCount === 1 ? "" : "s"}`}
+                  aria-label={`${blockedCount} blocked tasks`}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-md border border-rose-500/20 bg-rose-500/[0.08] px-1.5 py-0.5 text-[10px] font-mono-code text-rose-400"
+                >
+                  <span aria-hidden="true">🚫</span>
+                  <span>{blockedCount}</span>
+                </span>
+              )}
 
               {/* Priority Badges in Header */}
               {priorities.high > 0 && (
@@ -279,7 +425,9 @@ const Column = ({
               onClick={() => setSorted((v) => !v)}
               title={sorted ? "Restore default order" : "Sort by priority"}
               className={`text-[10px] font-mono-code px-1.5 py-0.5 rounded transition ${
-                sorted ? "bg-zinc-800 text-blue-400" : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
+                sorted
+                  ? "bg-zinc-800 text-blue-400"
+                  : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
               }`}
             >
               Sort
@@ -300,7 +448,9 @@ const Column = ({
       {isOverLimit && (
         <div className="mb-2 px-2.5 py-1 text-[11px] font-mono-code text-amber-300 bg-amber-500/10 border border-amber-500/25 rounded-md flex items-center gap-1.5">
           <span>⚠️</span>
-          <span>WIP limit exceeded ({tasks.length}/{WIP_LIMIT})</span>
+          <span>
+            WIP limit exceeded ({tasks.length}/{WIP_LIMIT})
+          </span>
         </div>
       )}
 
@@ -311,7 +461,9 @@ const Column = ({
             ref={provided.innerRef}
             {...provided.droppableProps}
             className={`flex flex-col gap-2 rounded-xl p-2 transition-colors flex-1 min-h-[450px] bg-[#0c0d12]/50 border border-zinc-900 ${
-              snapshot.isDraggingOver ? "bg-blue-950/15 border-blue-500/30 ring-1 ring-blue-500/20" : ""
+              snapshot.isDraggingOver
+                ? "bg-blue-950/15 border-blue-500/30 ring-1 ring-blue-500/20"
+                : ""
             }`}
           >
             {collapsed ? (
@@ -321,7 +473,9 @@ const Column = ({
             ) : tasks.length === 0 ? (
               <div className="flex flex-col items-center justify-center text-center p-6 text-xs text-zinc-600 border border-dashed border-zinc-800/80 rounded-lg my-auto font-mono-code">
                 <span className="text-zinc-500 mb-1">No active tasks</span>
-                <span className="text-[10px] text-zinc-600">Drag a card here or press N</span>
+                <span className="text-[10px] text-zinc-600">
+                  Drag a card here or press N
+                </span>
               </div>
             ) : (
               displayTasks.map((task, index) => (
