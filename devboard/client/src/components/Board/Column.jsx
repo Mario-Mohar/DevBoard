@@ -53,6 +53,8 @@ const Column = ({
   const [sorted, setSorted] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [batchTag, setBatchTag] = useState("");
+  const [tagging, setTagging] = useState(false);
   const [animate, setAnimate] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
 
@@ -86,24 +88,23 @@ const Column = ({
     });
   };
 
-const fireConfetti = () => {
-  confetti({
-    particleCount: 120,
-    spread: 70,
-    origin: { y: 0.65 },
-    colors: ["#22c55e", "#3b82f6", "#facc15", "#a78bfa"],
-  });
-};
+  const fireConfetti = () => {
+    confetti({
+      particleCount: 120,
+      spread: 70,
+      origin: { y: 0.65 },
+      colors: ["#22c55e", "#3b82f6", "#facc15", "#a78bfa"],
+    });
+  };
 
-const toggleSelectionMode = () => {
-  if (selectionMode) {
-    setSelectedIds(new Set());
-  }
+  const toggleSelectionMode = () => {
+    if (selectionMode) {
+      setSelectedIds(new Set());
+      setBatchTag("");
+    }
 
-  setSelectionMode((value) => !value);
-};
-
-
+    setSelectionMode((value) => !value);
+  };
 
   const toggleSelect = (id) => {
     setSelectedIds((prev) => {
@@ -117,83 +118,113 @@ const toggleSelectionMode = () => {
     });
   };
 
-  
-const handleMoveTo = async (target) => {
-  const idsToMove = [...selectedIds];
+  const handleMoveTo = async (target) => {
+    const idsToMove = [...selectedIds];
 
-  if (!selectionMode || idsToMove.length === 0 || target === columnId) {
-    return;
-  }
-
-  console.log("Bulk move started:", { target, idsToMove });
-
-  const room = roomInColumn(unfilteredTasks, target);
-  if (idsToMove.length > room) {
-    const label = COLUMN_CONFIG[target]?.label || target;
-    toast.error(
-      room === 0
-        ? `${label} is full (${columnLimit(target)}/${columnLimit(target)})`
-        : `Only ${room} more task${room === 1 ? "" : "s"} fit in ${label}`
-    );
-    return;
-  }
-
-  const targetTasks = allTasks.filter(
-    (task) => String(task.status) === String(target)
-  );
-
-  let base = targetTasks.reduce(
-    (max, task) => Math.max(max, Number(task.order) || 0),
-    -1
-  );
-
-  try {
-    const tasksToMove = idsToMove
-      .map((id) =>
-        allTasks.find((task) => String(task._id) === String(id))
-      )
-      .filter(Boolean);
-
-    if (tasksToMove.length === 0) {
-      console.error("No selected tasks matched allTasks.");
+    if (!selectionMode || idsToMove.length === 0 || target === columnId) {
       return;
     }
 
-    await Promise.all(
-      tasksToMove.map((task) => {
-        base += 1;
+    console.log("Bulk move started:", { target, idsToMove });
 
-        return updateTask(String(task._id), {
-          status: target,
-          order: base,
-        });
-      })
-    );
-
-    if (target === "done") {
-      fireConfetti();
+    const room = roomInColumn(unfilteredTasks, target);
+    if (idsToMove.length > room) {
+      const label = COLUMN_CONFIG[target]?.label || target;
+      toast.error(
+        room === 0
+          ? `${label} is full (${columnLimit(target)}/${columnLimit(target)})`
+          : `Only ${room} more task${room === 1 ? "" : "s"} fit in ${label}`,
+      );
+      return;
     }
 
-    setSelectedIds(new Set());
-    setSelectionMode(false);
-  } catch (error) {
-    console.error("Bulk move failed:", error);
-  }
-};
+    const targetTasks = allTasks.filter(
+      (task) => String(task.status) === String(target),
+    );
 
+    let base = targetTasks.reduce(
+      (max, task) => Math.max(max, Number(task.order) || 0),
+      -1,
+    );
 
-  const handleDeleteSelected = async () => {
-    if (!selectionMode || selectedIds.size === 0) return;
-    const count = selectedIds.size;
-    if (!window.confirm(`Delete ${count} ${count === 1 ? "task" : "tasks"}?`)) return;
+    try {
+      const tasksToMove = idsToMove
+        .map((id) => allTasks.find((task) => String(task._id) === String(id)))
+        .filter(Boolean);
 
-    const ids = [...selectedIds];
-    const results = await Promise.allSettled(ids.map((id) => deleteTask(String(id))));
+      if (tasksToMove.length === 0) {
+        console.error("No selected tasks matched allTasks.");
+        return;
+      }
 
-    // keep the ones that failed selected so they can be retried
-    const failed = ids.filter((_, i) => results[i].status === "rejected");
-    setSelectedIds(new Set(failed));
-    if (failed.length === 0) setSelectionMode(false);
+      await Promise.all(
+        tasksToMove.map((task) => {
+          base += 1;
+
+          return updateTask(String(task._id), {
+            status: target,
+            order: base,
+          });
+        }),
+      );
+
+      if (target === "done") {
+        fireConfetti();
+      }
+
+      setSelectedIds(new Set());
+      setSelectionMode(false);
+    } catch (error) {
+      console.error("Bulk move failed:", error);
+    }
+  };
+
+  const handleBatchTag = async (e) => {
+    e.preventDefault();
+
+    const tag = batchTag.trim();
+
+    if (!tag || selectedIds.size === 0 || tagging) {
+      return;
+    }
+
+    const selectedTasks = [...selectedIds]
+      .map((id) => allTasks.find((task) => String(task._id) === String(id)))
+      .filter(Boolean);
+
+    if (selectedTasks.length === 0) {
+      return;
+    }
+
+    setTagging(true);
+
+    try {
+      await Promise.all(
+        selectedTasks.map((task) => {
+          const existingTags = Array.isArray(task.tags) ? task.tags : [];
+
+          // Keep existing tags and avoid duplicates.
+          const alreadyHasTag = existingTags.some(
+            (existingTag) =>
+              String(existingTag).trim().toLowerCase() === tag.toLowerCase(),
+          );
+
+          if (alreadyHasTag) {
+            return Promise.resolve();
+          }
+
+          return updateTask(String(task._id), {
+            tags: [...existingTags, tag],
+          });
+        }),
+      );
+
+      setBatchTag("");
+    } catch (error) {
+      console.error("Bulk tag update failed:", error);
+    } finally {
+      setTagging(false);
+    }
   };
 
   useEffect(() => {
@@ -293,9 +324,10 @@ const handleMoveTo = async (target) => {
               >
                 Done
               </button>
-              <select
+              <div className="flex flex-col gap-4">
+                   <select
                 defaultValue=""
-              onChange={(e) => handleMoveTo(e.target.value)}
+                onChange={(e) => handleMoveTo(e.target.value)}
                 className="text-[12px] font-mono-code bg-zinc-900 border border-zinc-700 text-zinc-300 rounded px-1.5 py-0.5"
               >
                 <option value="" disabled>
@@ -313,15 +345,34 @@ const handleMoveTo = async (target) => {
                     );
                   })}
               </select>
-              <button
-                type="button"
-                onClick={handleDeleteSelected}
-                disabled={selectedIds.size === 0}
-                title="Delete selected tasks"
-                className="text-[10px] font-mono-code text-red-400/70 hover:text-red-400 border border-red-500/20 rounded px-1.5 py-0.5 transition disabled:opacity-40 disabled:pointer-events-none"
+
+              <form
+                onSubmit={handleBatchTag}
+                className="flex items-center gap-4"
               >
-                Delete {selectedIds.size}
-              </button>
+                <input
+                  type="text"
+                  value={batchTag}
+                  onChange={(e) => setBatchTag(e.target.value)}
+                  placeholder="Add tag..."
+                  aria-label="Tag to apply to selected tasks"
+                  disabled={tagging || selectedIds.size === 0}
+                  className="w-28 text-[12px] font-mono-code bg-zinc-900 border border-zinc-700 text-zinc-300 rounded px-2 py-1 outline-none focus:border-blue-500 disabled:opacity-50"
+                />
+
+                <button
+                  type="submit"
+                  disabled={
+                    tagging || selectedIds.size === 0 || !batchTag.trim()
+                  }
+                  className="text-[11px] font-mono-code px-2 py-1 rounded border border-blue-500/30 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {tagging ? "Adding..." : `Tag ${selectedIds.size}`}
+                </button>
+              </form>
+
+              </div>
+           
             </div>
           ) : (
             <div className="flex items-center gap-2 min-w-0">
@@ -329,27 +380,25 @@ const handleMoveTo = async (target) => {
               <span className="text-xs font-semibold uppercase tracking-wider text-zinc-200 truncate font-mono-code">
                 {config.label}
               </span>
-             
-          <span
-            className={`text-[11px] font-mono-code px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-400 border border-zinc-700/60 transition-transform ${
-              animate ? "scale-110" : ""
-            }`}
-          >
-            {limit !== null ? `${columnCount}/${limit}` : tasks.length}
-          </span>
 
-{blockedCount > 0 && (
-  <span
-    title={`${blockedCount} blocked task${blockedCount === 1 ? "" : "s"}`}
-    aria-label={`${blockedCount} blocked tasks`}
-    className="inline-flex shrink-0 items-center gap-1 rounded-md border border-rose-500/20 bg-rose-500/[0.08] px-1.5 py-0.5 text-[10px] font-mono-code text-rose-400"
-  >
-    <span aria-hidden="true">🚫</span>
-    <span>{blockedCount}</span>
-  </span>
-)}
+              <span
+                className={`text-[11px] font-mono-code px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-400 border border-zinc-700/60 transition-transform ${
+                  animate ? "scale-110" : ""
+                }`}
+              >
+                {limit !== null ? `${columnCount}/${limit}` : tasks.length}
+              </span>
 
-
+              {blockedCount > 0 && (
+                <span
+                  title={`${blockedCount} blocked task${blockedCount === 1 ? "" : "s"}`}
+                  aria-label={`${blockedCount} blocked tasks`}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-md border border-rose-500/20 bg-rose-500/[0.08] px-1.5 py-0.5 text-[10px] font-mono-code text-rose-400"
+                >
+                  <span aria-hidden="true">🚫</span>
+                  <span>{blockedCount}</span>
+                </span>
+              )}
 
               {/* Priority Badges in Header */}
               {priorities.high > 0 && (
