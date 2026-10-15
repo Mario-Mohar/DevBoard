@@ -47,6 +47,56 @@ const KanbanBoard = ({
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
+  // Arrow keys move the keyboard focus between cards: up and down inside a
+  // column, left and right to the next column that has cards. Enter clicks the
+  // focused card, so it opens the task (or toggles it in selection mode).
+  // Works on the cards as rendered, so search, filters and sorting apply.
+  useEffect(() => {
+    const KEYS = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Enter"];
+    const handler = (e) => {
+      if (!KEYS.includes(e.key)) return;
+      // A keyboard drag in progress handles the arrows itself
+      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      if (e.target.closest?.("input, textarea, select, [contenteditable='true']")) return;
+      // Any open modal (task, shortcuts, new column) uses a full-screen overlay
+      if (document.querySelector(".fixed.inset-0")) return;
+
+      const cols = [...document.querySelectorAll("[data-rfd-droppable-id]")]
+        .map((col) => [...col.querySelectorAll("[data-rfd-drag-handle-draggable-id]")])
+        .filter((cards) => cards.length > 0);
+      if (cols.length === 0) return;
+
+      const current = document.activeElement?.closest?.("[data-rfd-drag-handle-draggable-id]");
+      let col = cols.findIndex((cards) => cards.includes(current));
+      let row = col === -1 ? -1 : cols[col].indexOf(current);
+
+      if (e.key === "Enter") {
+        if (col === -1) return;
+        e.preventDefault();
+        current.click();
+        return;
+      }
+
+      e.preventDefault();
+      if (col === -1) {
+        col = 0;
+        row = 0;
+      } else if (e.key === "ArrowDown") {
+        row = Math.min(row + 1, cols[col].length - 1);
+      } else if (e.key === "ArrowUp") {
+        row = Math.max(row - 1, 0);
+      } else {
+        col = Math.min(Math.max(col + (e.key === "ArrowRight" ? 1 : -1), 0), cols.length - 1);
+        row = Math.min(row, cols[col].length - 1);
+      }
+      const next = cols[col][row];
+      next.focus();
+      next.scrollIntoView({ block: "nearest", inline: "nearest" });
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
   const getTasksByStatus = (status) =>
     displayedTasks
       .filter((t) => t.status === status)
