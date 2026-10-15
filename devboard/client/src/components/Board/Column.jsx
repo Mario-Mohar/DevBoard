@@ -10,6 +10,8 @@ import {
   ChevronRightIcon,
 } from "../common/Icons";
 import confetti from "canvas-confetti";
+import { toast } from "react-toastify";
+import { columnLimit, countInColumn, roomInColumn } from "../../utils/columnLimits";
 
 const COLUMN_CONFIG = {
   backlog: {
@@ -37,8 +39,6 @@ const COLUMN_CONFIG = {
     headerBg: "border-emerald-500/20",
   },
 };
-
-const WIP_LIMIT = 5;
 
 const Column = ({
   columnId,
@@ -126,6 +126,17 @@ const Column = ({
     }
 
     console.log("Bulk move started:", { target, idsToMove });
+
+    const room = roomInColumn(unfilteredTasks, target);
+    if (idsToMove.length > room) {
+      const label = COLUMN_CONFIG[target]?.label || target;
+      toast.error(
+        room === 0
+          ? `${label} is full (${columnLimit(target)}/${columnLimit(target)})`
+          : `Only ${room} more task${room === 1 ? "" : "s"} fit in ${label}`,
+      );
+      return;
+    }
 
     const targetTasks = allTasks.filter(
       (task) => String(task.status) === String(target),
@@ -273,7 +284,10 @@ const Column = ({
     color: "#71717a",
   };
 
-  const isOverLimit = columnId === "inprogress" && tasks.length > WIP_LIMIT;
+  // Counted over the unfiltered board, see utils/columnLimits.js
+  const limit = columnLimit(columnId);
+  const columnCount = countInColumn(unfilteredTasks, columnId);
+  const isFull = limit !== null && columnCount >= limit;
 
   const blockedCount = useMemo(
     () => (tasks || []).filter((task) => task.blockedBy?.length > 0).length,
@@ -320,11 +334,15 @@ const Column = ({
                 </option>
                 {columns
                   .filter((c) => c !== columnId)
-                  .map((c) => (
-                    <option key={c} value={c}>
-                      {COLUMN_CONFIG[c]?.label || c}
-                    </option>
-                  ))}
+                  .map((c) => {
+                    const fits = roomInColumn(unfilteredTasks, c) >= selectedIds.size;
+                    return (
+                      <option key={c} value={c} disabled={!fits}>
+                        {COLUMN_CONFIG[c]?.label || c}
+                        {fits ? "" : " (full)"}
+                      </option>
+                    );
+                  })}
               </select>
 
               <form
@@ -367,7 +385,7 @@ const Column = ({
                   animate ? "scale-110" : ""
                 }`}
               >
-                {tasks.length}
+                {limit !== null ? `${columnCount}/${limit}` : tasks.length}
               </span>
 
               {blockedCount > 0 && (
@@ -434,8 +452,9 @@ const Column = ({
             <button
               type="button"
               onClick={() => onAddTask(columnId)}
-              title={`Add task to ${config.label}`}
-              className="p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded transition"
+              disabled={isFull}
+              title={isFull ? `${config.label} is full (${limit}/${limit})` : `Add task to ${config.label}`}
+              className="p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded transition disabled:opacity-40 disabled:pointer-events-none"
             >
               <PlusIcon className="w-3.5 h-3.5" />
             </button>
@@ -443,11 +462,11 @@ const Column = ({
         )}
       </div>
 
-      {isOverLimit && (
+      {isFull && (
         <div className="mb-2 px-2.5 py-1 text-[11px] font-mono-code text-amber-300 bg-amber-500/10 border border-amber-500/25 rounded-md flex items-center gap-1.5">
           <span>⚠️</span>
           <span>
-            WIP limit exceeded ({tasks.length}/{WIP_LIMIT})
+            Limit reached ({columnCount}/{limit}), move a task on first
           </span>
         </div>
       )}
@@ -496,7 +515,9 @@ const Column = ({
               <button
                 type="button"
                 onClick={() => onAddTask(columnId)}
-                className="mt-1 w-full py-2 px-3 border border-dashed border-zinc-800 hover:border-zinc-700 bg-transparent hover:bg-zinc-900/40 rounded-lg text-xs font-mono-code text-zinc-500 hover:text-zinc-300 transition flex items-center justify-center gap-1.5"
+                disabled={isFull}
+                title={isFull ? `${config.label} is full (${limit}/${limit})` : undefined}
+                className="mt-1 w-full py-2 px-3 border border-dashed border-zinc-800 hover:border-zinc-700 bg-transparent hover:bg-zinc-900/40 rounded-lg text-xs font-mono-code text-zinc-500 hover:text-zinc-300 transition flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:pointer-events-none"
               >
                 <PlusIcon className="w-3.5 h-3.5" />
                 <span>Add task</span>

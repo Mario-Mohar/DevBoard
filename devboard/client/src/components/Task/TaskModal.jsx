@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { toast } from "react-toastify";
 import { useBoard } from "../../context/BoardContext";
 import { timeAgo } from "../../utils/timeAgo";
+import { columnLimit, isColumnFull } from "../../utils/columnLimits";
 import { QRCodeSVG } from "qrcode.react";
 import {
   SparklesIcon,
@@ -344,6 +345,11 @@ ${task.snippets
   const handleDuplicate = async () => {
     const base = form.title.trim();
     if (!base) return;
+    if (isColumnFull(allTasks, form.status)) {
+      const limit = columnLimit(form.status);
+      toast.error(`That column is full (${limit}/${limit}), the copy has nowhere to go`);
+      return;
+    }
     const room = TITLE_MAX_LENGTH - COPY_SUFFIX.length;
     const title =
       (base.length > room ? base.slice(0, room).trim() : base) + COPY_SUFFIX;
@@ -523,10 +529,21 @@ ${task.snippets
               onChange={(e) => setForm({ ...form, status: e.target.value })}
               className="flex-1 bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
             >
-              <option value="backlog">Backlog</option>
-              <option value="inprogress">In Progress</option>
-              <option value="review">Review</option>
-              <option value="done">Done</option>
+              {[
+                ["backlog", "Backlog"],
+                ["inprogress", "In Progress"],
+                ["review", "Review"],
+                ["done", "Done"],
+              ].map(([value, label]) => {
+                // The column the task already sits in stays selectable
+                const full = value !== task?.status && isColumnFull(allTasks, value);
+                return (
+                  <option key={value} value={value} disabled={full}>
+                    {label}
+                    {full ? ` (full, ${columnLimit(value)}/${columnLimit(value)})` : ""}
+                  </option>
+                );
+              })}
             </select>
 
             <div className="flex-1">
