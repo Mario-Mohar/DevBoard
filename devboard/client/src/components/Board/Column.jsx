@@ -225,9 +225,9 @@ const Column = ({
   const displayTasks = (
     sorted
       ? [...tasks].sort((a, b) => {
-          const order = { high: 0, medium: 1, low: 2 };
-          return (order[a.priority] ?? 3) - (order[b.priority] ?? 3);
-        })
+        const order = { high: 0, medium: 1, low: 2 };
+        return (order[a.priority] ?? 3) - (order[b.priority] ?? 3);
+      })
       : [...tasks]
   ).sort(
     (a, b) => (pinnedIds.has(b._id) ? 1 : 0) - (pinnedIds.has(a._id) ? 1 : 0),
@@ -281,9 +281,8 @@ const Column = ({
   );
   return (
     <div
-      className={`flex flex-col w-full md:w-72 flex-shrink-0 transition-all ${
-        isActive ? "ring-1 ring-blue-500/50" : ""
-      }`}
+      className={`flex flex-col w-full md:w-72 flex-shrink-0 transition-all ${isActive ? "ring-1 ring-blue-500/50" : ""
+        }`}
     >
       {/* Column Header */}
       <div className="flex items-center justify-between px-2 py-2 mb-2 bg-[#0d0e13] border border-zinc-800/80 rounded-lg">
@@ -359,7 +358,7 @@ const Column = ({
           ) : (
             <div className="flex items-center gap-2 min-w-0">
               <span className={`w-2 h-2 rounded-full shrink-0 ${config.dot}`} />
-              <span className="text-xs font-semibold uppercase tracking-wider text-zinc-200 truncate font-mono-code">
+              <span className="text-xs font-semibold uppercase tracking-wider text-zinc-200 truncate font-mono-code max-w-[120px]" title={config.label}>
                 {config.label}
               </span>
 
@@ -424,11 +423,10 @@ const Column = ({
               type="button"
               onClick={() => setSorted((v) => !v)}
               title={sorted ? "Restore default order" : "Sort by priority"}
-              className={`text-[10px] font-mono-code px-1.5 py-0.5 rounded transition ${
-                sorted
+              className={`text-[10px] font-mono-code px-1.5 py-0.5 rounded transition ${sorted
                   ? "bg-zinc-800 text-blue-400"
                   : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
-              }`}
+                }`}
             >
               Sort
             </button>
@@ -460,11 +458,10 @@ const Column = ({
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`flex flex-col gap-2 rounded-xl p-2 transition-colors flex-1 min-h-[450px] bg-[#0c0d12]/50 border border-zinc-900 ${
-              snapshot.isDraggingOver
+            className={`flex flex-col gap-2 rounded-xl p-2 transition-colors flex-1 min-h-[450px] bg-[#0c0d12]/50 border border-zinc-900 ${snapshot.isDraggingOver
                 ? "bg-blue-950/15 border-blue-500/30 ring-1 ring-blue-500/20"
                 : ""
-            }`}
+              }`}
           >
             {collapsed ? (
               <div className="flex items-center justify-center text-center p-3 text-xs text-zinc-500 border border-dashed border-zinc-800 rounded-lg font-mono-code">
