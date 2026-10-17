@@ -16,6 +16,26 @@ import {
   CheckIcon,
 } from "../common/Icons";
 
+const TEMPLATES = [
+  {
+    label: "🐛 Bug",
+    title: "Bug: ",
+    tags: "bug",
+    priority: "high",
+  },
+  {
+    label: "✨ Feature",
+    title: "Feat: ",
+    tags: "enhancement",
+    priority: "medium",
+  },
+  {
+    label: "📝 Docs",
+    title: "Docs: ",
+    tags: "documentation",
+    priority: "low",
+  },
+];
 const TITLE_MAX_LENGTH = 100;
 // The tags field holds the whole comma separated list, not one tag, so its
 // budget has to be sized for a list. The placeholder alone is 39 characters.
@@ -72,6 +92,14 @@ const TaskModal = ({
   };
 
   const [form, setForm] = useState(initialForm);
+  const applyTemplate = (template) => {
+    setForm((prev) => ({
+      ...prev,
+      title: template.title,
+      tags: template.tags,
+      priority: template.priority,
+    }));
+  };
   const [confirmClose, setConfirmClose] = useState(false);
   const [showQR, setShowQR] = useState(false);
   const taskShareUrl = task ? `${window.location.origin}/task/${task._id}` : "";
@@ -440,6 +468,20 @@ ${task.snippets
         </div>
 
         <div className="p-5 flex flex-col gap-3 max-h-[70vh] overflow-y-auto">
+            {mode === "create" && (
+              <div className="flex flex-wrap gap-2">
+              {TEMPLATES.map((template) => (
+              <button
+                key={template.label}
+                type="button"
+                onClick={() => applyTemplate(template)}
+                className="px-3 py-1.5 text-xs rounded-lg border border-[var(--border-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition"
+              >
+              {template.label}
+              </button>
+            ))}
+          </div>
+          )}
           <input
             autoFocus
             type="text"
