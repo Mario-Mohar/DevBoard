@@ -487,12 +487,6 @@ ${task.snippets
                 ))}
               </div>
             )}
-          {task && (
-            <p className="text-[10px] text-[#444]">
-              Updated {timeAgo(task?.updatedAt)} · Created{" "}
-              {timeAgo(task?.createdAt)}
-            </p>
-          )}
           <input
             autoFocus
             type="text"
