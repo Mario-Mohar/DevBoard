@@ -88,6 +88,10 @@ const TaskModal = ({
     githubIssueNumber: task?.githubIssueNumber || "",
     dueDate: task?.dueDate || "",
     notes: task?.notes || "",
+    assignee:
+      typeof task?.assignee === "object"
+        ? String(task.assignee?._id || "")
+        : String(task?.assignee || ""),
    blockedBy: Array.isArray(task?.blockedBy) ? task.blockedBy .map((item) => typeof item === "object" && item !== null ? String(item._id ?? item.id ?? "") : String(item), ) .filter(Boolean) : [],
   };
 
@@ -101,10 +105,27 @@ const TaskModal = ({
     }));
   };
   const [confirmClose, setConfirmClose] = useState(false);
+  const [reassigningTo, setReassigningTo] = useState("");
   const [showQR, setShowQR] = useState(false);
   const taskShareUrl = task ? `${window.location.origin}/task/${task._id}` : "";
   const { deleteTask, addTask, allTasks } = useBoard();
-  const isDirty = JSON.stringify(form) !== JSON.stringify(initialForm);
+  const teamMembers = useMemo(() => {
+    const members = new Map();
+    (allTasks || []).forEach((item) => {
+      const member = item.assignee;
+      if (member && typeof member === "object" && member._id && member.name) {
+        members.set(String(member._id), member);
+      }
+    });
+    return [...members.values()].sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+  }, [allTasks]);
+  const isDirty = Object.keys(initialForm).some(
+    (key) =>
+      key !== "assignee" &&
+      JSON.stringify(form[key]) !== JSON.stringify(initialForm[key]),
+  );
   const isDuplicate = allTasks.some(
     (t) =>
       t.title?.toLowerCase().trim() === form.title.toLowerCase().trim() &&
@@ -352,9 +373,8 @@ ${task.snippets
     ...(snippetCode
       ? { snippets: [{ language: snippetLang, code: snippetCode }] }
       : {}),
-      blockedBy: Array.isArray(form.blockedBy)
-  ? form.blockedBy
-  : [],
+    assignee: form.assignee || undefined,
+    blockedBy: Array.isArray(form.blockedBy) ? form.blockedBy : [],
   });
 
   const handleSave = async () => {
@@ -363,6 +383,22 @@ ${task.snippets
     await onSave(buildPayload());
     setLoading(false);
     onClose();
+  };
+
+  const handleReassign = async (member) => {
+    const memberId = String(member._id);
+    if (memberId === form.assignee || !task?._id || !updateTask) return;
+
+    setReassigningTo(memberId);
+    try {
+      await updateTask(task._id, { assignee: memberId });
+      setForm((current) => ({ ...current, assignee: memberId }));
+      toast.success(`Reassigned to ${member.name}`);
+    } catch {
+      toast.error("Could not reassign task. Try again.");
+    } finally {
+      setReassigningTo("");
+    }
   };
 
   // The copy carries over everything the modal shows, snippets included —
@@ -569,6 +605,52 @@ ${task.snippets
               className="w-full bg-[var(--bg-primary)] border border-dashed border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] resize-none"
             />
           </div>
+
+          {mode === "edit" && (
+            <section aria-labelledby="assignee-label" className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h3
+                  id="assignee-label"
+                  className="text-xs font-medium text-[var(--text-secondary)]"
+                >
+                  Reassign task
+                </h3>
+                <span className="text-[10px] text-[var(--text-muted)]">
+                  {form.assignee
+                    ? `Assigned to ${teamMembers.find((member) => String(member._id) === form.assignee)?.name || task?.assignee?.name || "team member"}`
+                    : "Unassigned"}
+                </span>
+              </div>
+              {teamMembers.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5" role="group" aria-label="Team members">
+                  {teamMembers.map((member) => {
+                    const memberId = String(member._id);
+                    const selected = form.assignee === memberId;
+                    return (
+                      <button
+                        key={memberId}
+                        type="button"
+                        onClick={() => handleReassign(member)}
+                        disabled={Boolean(reassigningTo)}
+                        aria-pressed={selected}
+                        className={`rounded-full border px-2.5 py-1 text-[10px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:cursor-wait disabled:opacity-60 ${
+                          selected
+                            ? "border-purple-500 text-purple-300 bg-purple-500/10"
+                            : "border-[var(--border-primary)] text-[var(--text-secondary)] hover:border-[var(--accent)] hover:text-[var(--text-primary)]"
+                        }`}
+                      >
+                        {reassigningTo === memberId ? "Assigning…" : member.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-[11px] text-[var(--text-muted)]">
+                  No team members have been assigned to tasks yet.
+                </p>
+              )}
+            </section>
+          )}
 
           <div className="flex gap-2">
             <select
