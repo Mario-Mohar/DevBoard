@@ -470,18 +470,18 @@ ${task.snippets
         <div className="p-5 flex flex-col gap-3 max-h-[70vh] overflow-y-auto">
             {mode === "create" && (
               <div className="flex flex-wrap gap-2">
-              {TEMPLATES.map((template) => (
-              <button
-                key={template.label}
-                type="button"
-                onClick={() => applyTemplate(template)}
-                className="px-3 py-1.5 text-xs rounded-lg border border-[var(--border-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition"
-              >
-              {template.label}
-              </button>
-            ))}
-          </div>
-          )}
+                {TEMPLATES.map((template) => (
+                  <button
+                    key={template.label}
+                    type="button"
+                    onClick={() => applyTemplate(template)}
+                    className="px-3 py-1.5 text-xs rounded-lg border border-[var(--border-primary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition"
+                  >
+                    {template.label}
+                  </button>
+                ))}
+              </div>
+            )}
           <input
             autoFocus
             type="text"
