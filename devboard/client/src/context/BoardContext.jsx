@@ -20,6 +20,8 @@ export const BoardProvider = ({ children }) => {
       priority: "high",
       tags: ["feature", "ui"],
       pomodoroCount: 2,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     },
     {
       _id: "2",
@@ -29,6 +31,8 @@ export const BoardProvider = ({ children }) => {
       priority: "medium",
       tags: ["review"],
       pomodoroCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     },
   ]);
   const [loading, setLoading] = useState(false);
@@ -136,7 +140,14 @@ export const BoardProvider = ({ children }) => {
   const addTask = async (taskData) => {
     try {
       if (user.token === "mock-token") {
-        const newTask = { ...taskData, _id: Date.now().toString(), pomodoroCount: 0 };
+        const now = new Date().toISOString();
+        const newTask = {
+          ...taskData,
+          _id: Date.now().toString(),
+          pomodoroCount: 0,
+          createdAt: now,
+          updatedAt: now,
+        };
         setAllTasks((prev) => [...prev, newTask]);
         return;
       }
@@ -163,6 +174,7 @@ export const BoardProvider = ({ children }) => {
             return {
               ...t,
               ...updates,
+              updatedAt: new Date().toISOString(),
               ...(moved && { previousStatus: t.status }),
             };
           }),
