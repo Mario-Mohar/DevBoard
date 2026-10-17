@@ -438,6 +438,11 @@ ${task.snippets
             <XIcon className="w-4 h-4" />
           </button>
         </div>
+        {mode !== "create" && task && (
+          <div className="px-5 py-2 border-b border-zinc-800 bg-[#0f1016] text-xs text-zinc-500">
+          Updated {timeAgo(task.updatedAt)} · Created {timeAgo(task.createdAt)}
+          </div>
+        )}
 
         <div className="p-5 flex flex-col gap-3 max-h-[70vh] overflow-y-auto">
           <input
