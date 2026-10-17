@@ -440,6 +440,12 @@ ${task.snippets
         </div>
 
         <div className="p-5 flex flex-col gap-3 max-h-[70vh] overflow-y-auto">
+          {task && (
+            <p className="text-[10px] text-[#444]">
+              Updated {timeAgo(task?.updatedAt)} · Created{" "}
+              {timeAgo(task?.createdAt)}
+            </p>
+          )}
           <input
             autoFocus
             type="text"
