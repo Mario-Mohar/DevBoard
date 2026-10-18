@@ -36,6 +36,7 @@ export const BoardProvider = ({ children }) => {
     },
   ]);
   const [loading, setLoading] = useState(false);
+  const [activeSprint, setActiveSprint] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [onlineUsers, setOnlineUsers] = useState(1);
   const [error, setError] = useState(null);
@@ -82,6 +83,22 @@ export const BoardProvider = ({ children }) => {
     }
   };
 
+  const fetchActiveSprint = async () => {
+    const token = getToken();
+    if (!token || token === "mock-token") {
+      setActiveSprint(null);
+      return;
+    }
+
+    try {
+      const { data } = await axios.get("/api/v1/sprints/active", authHeaders());
+      setActiveSprint(data);
+    } catch (err) {
+      console.error("fetchActiveSprint failed:", err);
+      setActiveSprint(null);
+    }
+  };
+
   const viewTask = async (id) => {
     if (user.token === "mock-token") {
       const task = allTasks.find((item) => item._id === id);
@@ -107,8 +124,10 @@ export const BoardProvider = ({ children }) => {
   useEffect(() => {
     if (user && user.token !== "mock-token") {
       fetchTasks();
+      fetchActiveSprint();
     } else {
       setLoading(false);
+      setActiveSprint(null);
     }
   }, [user]);
 
@@ -230,6 +249,7 @@ export const BoardProvider = ({ children }) => {
     setUser(null);
     localStorage.removeItem("devboard_user");
     setAllTasks([]);
+    setActiveSprint(null);
     setSearchQuery("");
   };
 
@@ -293,6 +313,7 @@ export const BoardProvider = ({ children }) => {
       value={{
         tasks,
         allTasks,
+        activeSprint,
         loading,
         user,
         onlineUsers,

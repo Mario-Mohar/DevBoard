@@ -67,12 +67,14 @@ app.use(limiter);
 // Routes
 app.use(`${API_VERSION}/auth`, require("./routes/auth"));
 app.use(`${API_VERSION}/tasks`, require("./routes/tasks"));
+app.use(`${API_VERSION}/sprints`, require("./routes/sprints"));
 app.use(`${API_VERSION}/github`, require("./routes/github"));
 app.use(`${API_VERSION}/ai`, require("./routes/ai"));
 
 // Backward compatibility aliases
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/tasks", require("./routes/tasks"));
+app.use("/api/sprints", require("./routes/sprints"));
 app.use("/api/github", require("./routes/github"));
 app.use("/api/ai", require("./routes/ai"));
 

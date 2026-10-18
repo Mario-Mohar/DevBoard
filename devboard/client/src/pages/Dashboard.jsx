@@ -60,6 +60,7 @@ const THEMES = {
 const Dashboard = () => {
   const {
     user,
+    activeSprint,
     logout,
     logoutAll,
     updateTask,
@@ -246,6 +247,14 @@ const Dashboard = () => {
         (myTasks.filter((t) => t.status === "done").length / myTasks.length) * 100
       )
       : 0;
+  const daysRemaining = activeSprint
+    ? Math.max(
+        0,
+        Math.ceil(
+          (new Date(activeSprint.endDate).getTime() - Date.now()) / 86400000,
+        ),
+      )
+    : 0;
 
   if (loading) {
     return (
@@ -449,6 +458,17 @@ const Dashboard = () => {
           </div>
         </div>
       </header>
+
+      {activeSprint && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-blue-500/5 border-b border-blue-500/15 text-xs font-mono-code">
+          <span aria-hidden="true">🏃</span>
+          <span className="font-medium text-blue-300">{activeSprint.name}</span>
+          <span className="text-zinc-500">·</span>
+          <span className="text-zinc-400">
+            {daysRemaining} {daysRemaining === 1 ? "day" : "days"} remaining
+          </span>
+        </div>
+      )}
 
       {/* Heatmap Section */}
       <div className="no-print">
