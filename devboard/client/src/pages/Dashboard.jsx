@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { toast } from "react-toastify";
 import KanbanBoard from "../components/Board/KanbanBoard";
 import PomodoroTimer from "../components/Pomodoro/PomodoroTimer";
 import TaskModal from "../components/Task/TaskModal";
@@ -13,6 +14,7 @@ import {
   StarIcon,
   TargetIcon,
   DownloadIcon,
+  UploadIcon,
   PrinterIcon,
   TrashIcon,
   KeyboardIcon,
@@ -40,6 +42,78 @@ const escapeCsvValue = (value) => {
 
 const toCsv = (rows) =>
   rows.map((row) => row.map(escapeCsvValue).join(",")).join("\r\n");
+
+const parseCsvRows = (text) => {
+  const rows = [];
+  let row = [];
+  let field = "";
+  let inQuotes = false;
+  let afterQuote = false;
+
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i];
+
+    if (inQuotes) {
+      if (char === '"') {
+        if (text[i + 1] === '"') {
+          field += '"';
+          i += 1;
+        } else {
+          inQuotes = false;
+          afterQuote = true;
+        }
+      } else {
+        field += char;
+      }
+      continue;
+    }
+
+    if (afterQuote) {
+      if (char === ",") {
+        row.push(field);
+        field = "";
+        afterQuote = false;
+      } else if (char === "\n" || char === "\r") {
+        row.push(field);
+        rows.push(row);
+        row = [];
+        field = "";
+        afterQuote = false;
+        if (char === "\r" && text[i + 1] === "\n") i += 1;
+      } else if (char !== " " && char !== "\t") {
+        throw new Error("Unexpected text after a quoted CSV value.");
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      if (field.length > 0) throw new Error("Unexpected quote in a CSV value.");
+      inQuotes = true;
+    } else if (char === ",") {
+      row.push(field);
+      field = "";
+    } else if (char === "\n" || char === "\r") {
+      row.push(field);
+      rows.push(row);
+      row = [];
+      field = "";
+      if (char === "\r" && text[i + 1] === "\n") i += 1;
+    } else {
+      field += char;
+    }
+  }
+
+  if (inQuotes) throw new Error("The CSV has an unclosed quoted value.");
+  if (field.length > 0 || row.length > 0 || afterQuote) {
+    row.push(field);
+    rows.push(row);
+  }
+
+  return rows;
+};
+
+const VALID_STATUSES = new Set(["backlog", "inprogress", "review", "done"]);
+const VALID_PRIORITIES = new Set(["low", "medium", "high"]);
 
 const formatCsvDate = (value) => {
   if (!value) return "";
@@ -125,6 +199,8 @@ const Dashboard = () => {
   const [isCreatingFirstTask, setIsCreatingFirstTask] = useState(false);
   const [showTop, setShowTop] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const csvInputRef = useRef(null);
 
   const [theme, setTheme] = useState(
     () => JSON.parse(localStorage.getItem("board_theme")) || "blue"
@@ -255,6 +331,102 @@ const Dashboard = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+
+  const handleImportCSV = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith(".csv")) {
+      toast.error("Choose a .csv file to import.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("CSV files must be smaller than 5 MB.");
+      return;
+    }
+
+    setIsImporting(true);
+    try {
+      const text = (await file.text()).replace(/^\uFEFF/, "");
+      const rows = parseCsvRows(text);
+      const nonEmptyRows = rows.filter((cells) => cells.some((cell) => cell.trim()));
+      if (nonEmptyRows.length < 2) {
+        throw new Error("The CSV must include a header row and at least one task.");
+      }
+
+      const headers = nonEmptyRows[0].map((header) => header.trim().toLowerCase());
+      const titleIndex = headers.indexOf("title");
+      if (titleIndex === -1) {
+        throw new Error('The CSV needs a "Title" column. Export a DevBoard CSV for the supported format.');
+      }
+
+      const statusIndex = headers.indexOf("status");
+      const priorityIndex = headers.indexOf("priority");
+      const tagsIndex = headers.indexOf("tags");
+      const candidates = [];
+      const invalidRows = [];
+
+      nonEmptyRows.slice(1).forEach((cells, index) => {
+        const rowNumber = index + 2;
+        const title = (cells[titleIndex] || "").trim();
+        const status = statusIndex === -1
+          ? "backlog"
+          : (cells[statusIndex] || "backlog").trim().toLowerCase() || "backlog";
+        const priority = priorityIndex === -1
+          ? "medium"
+          : (cells[priorityIndex] || "medium").trim().toLowerCase() || "medium";
+
+        if (!title) {
+          invalidRows.push(`row ${rowNumber}: title is required`);
+        } else if (!VALID_STATUSES.has(status)) {
+          invalidRows.push(`row ${rowNumber}: invalid status "${status}"`);
+        } else if (!VALID_PRIORITIES.has(priority)) {
+          invalidRows.push(`row ${rowNumber}: invalid priority "${priority}"`);
+        } else {
+          candidates.push({
+            rowNumber,
+            task: {
+              title,
+              status,
+              priority,
+              tags: tagsIndex === -1
+                ? []
+                : (cells[tagsIndex] || "").split(";").map((tag) => tag.trim()).filter(Boolean),
+            },
+          });
+        }
+      });
+
+      if (!candidates.length) {
+        throw new Error(invalidRows[0] || "No valid tasks were found in this CSV.");
+      }
+
+      let importedCount = 0;
+      const failedRows = [];
+      for (const { rowNumber, task } of candidates) {
+        try {
+          await addTask(task);
+          importedCount += 1;
+        } catch {
+          failedRows.push(`row ${rowNumber}: could not be saved`);
+        }
+      }
+
+      const skippedCount = invalidRows.length + failedRows.length;
+      if (importedCount) {
+        toast.success(`Imported ${importedCount} task${importedCount === 1 ? "" : "s"}.`);
+      }
+      if (skippedCount) {
+        const firstIssue = invalidRows[0] || failedRows[0];
+        toast.warn(`${skippedCount} row${skippedCount === 1 ? " was" : "s were"} skipped. ${firstIssue}`);
+      }
+    } catch (error) {
+      toast.error(error.message || "Could not read this CSV file.");
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   const myTasks = tasks.filter((t) => t.assignee?._id === user?._id);
@@ -409,7 +581,26 @@ const Dashboard = () => {
             <TargetIcon className="w-3.5 h-3.5" />
           </button>
 
-          {/* Export CSV */}
+          {/* CSV import and export */}
+          <input
+            ref={csvInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            onChange={handleImportCSV}
+            className="hidden"
+            aria-label="Choose a CSV file to import tasks"
+          />
+          <button
+            type="button"
+            onClick={() => csvInputRef.current?.click()}
+            disabled={isImporting}
+            title="Import tasks from CSV"
+            aria-label="Import tasks from CSV"
+            className="p-1.5 rounded-lg border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 transition disabled:opacity-50"
+          >
+            <UploadIcon className="w-3.5 h-3.5" />
+          </button>
+
           <button
             type="button"
             onClick={handleExportCSV}

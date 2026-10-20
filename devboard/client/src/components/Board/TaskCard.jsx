@@ -117,6 +117,8 @@ const TaskCard = ({
   const { suggestedTags, loadingTags, handleSuggestTags, handleAddTag } = useSuggestTags(task, selectedSnippet, updateTask);
   const [isFlipping, setIsFlipping] = useState(false);
   const prevStatus = useRef(task.status);
+  const [isPriorityFlashing, setIsPriorityFlashing] = useState(false);
+  const prevPriority = useRef(task.priority);
 
   useEffect(() => {
     if (prevStatus.current !== task.status) {
@@ -126,6 +128,15 @@ const TaskCard = ({
       return () => clearTimeout(timer);
     }
   }, [task.status]);
+
+  useEffect(() => {
+    if (prevPriority.current === task.priority) return;
+
+    prevPriority.current = task.priority;
+    setIsPriorityFlashing(true);
+    const timer = setTimeout(() => setIsPriorityFlashing(false), 600);
+    return () => clearTimeout(timer);
+  }, [task.priority]);
 
   // ── Time tracker ──────────────────────────────────────────
   const [elapsed, setElapsed] = useState(0);
@@ -270,7 +281,7 @@ const TaskCard = ({
               )}
 
               {/* Priority Pill */}
-              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono-code font-medium border ${priorityMeta.classes}`}>
+              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono-code font-medium border transition-all duration-200 ${priorityMeta.classes} ${isPriorityFlashing ? "scale-125 ring-2 ring-white/30" : "scale-100"}`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${priorityMeta.dot}`} />
                 {priorityMeta.label}
               </span>

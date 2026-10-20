@@ -381,7 +381,7 @@ const Column = ({
               </span>
 
               <span
-                className={`text-[11px] font-mono-code px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-400 border border-zinc-700/60 transition-transform ${
+                className={`text-[10px] font-bold bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded-full transition-transform ${
                   animate ? "scale-110" : ""
                 }`}
               >
