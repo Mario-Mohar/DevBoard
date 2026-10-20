@@ -20,6 +20,8 @@ import {
   KeyboardIcon,
   LogoutIcon,
   FullscreenIcon,
+  SparklesIcon,
+  CloudIcon,
   ChevronUpIcon,
   XIcon,
 } from "../components/common/Icons";
@@ -131,6 +133,37 @@ const THEMES = {
   cyan: { name: "Cyan", accent: "#06b6d4", bg: "#060e12" },
 };
 
+const MOOD_THEMES = {
+  sunrise: { name: "Morning", accent: "#F39C12", bg: "#110e08" },
+  focus: { name: "Focus time", accent: "#2980B9", bg: "#080f14" },
+  evening: { name: "Evening", accent: "#E85D75", bg: "#14080c" },
+  night: { name: "Night mode", accent: "#7F77DD", bg: "#0f0f10" },
+};
+
+const getTimeMood = (hour = new Date().getHours()) => {
+  if (hour >= 5 && hour < 10) return "sunrise";
+  if (hour >= 10 && hour < 17) return "focus";
+  if (hour >= 17 && hour < 21) return "evening";
+  return "night";
+};
+
+const getWeatherMood = (code) => {
+  if ([0, 1].includes(code)) return "clear";
+  if ([2, 3, 45, 48].includes(code)) return "cloudy";
+  if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return "rain";
+  if ([71, 73, 75, 77, 85, 86].includes(code)) return "snow";
+  if ([95, 96, 97, 99].includes(code)) return "storm";
+  return null;
+};
+
+const WEATHER_ACCENTS = {
+  clear: "#FBBF24",
+  cloudy: "#94A3B8",
+  rain: "#38BDF8",
+  snow: "#BAE6FD",
+  storm: "#A78BFA",
+};
+
 const Dashboard = () => {
   const {
     user,
@@ -184,20 +217,139 @@ const Dashboard = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const csvInputRef = useRef(null);
+  const [autoThemeEnabled, setAutoThemeEnabled] = useState(
+    () => localStorage.getItem("board_auto_theme") === "true"
+  );
+  const [timeMood, setTimeMood] = useState(() => getTimeMood());
+  const [weatherCoordinates, setWeatherCoordinates] = useState(null);
+  const [weatherCode, setWeatherCode] = useState(null);
+  const [weatherStatus, setWeatherStatus] = useState("off");
+  const weatherRequestId = useRef(0);
 
   const [theme, setTheme] = useState(
     () => JSON.parse(localStorage.getItem("board_theme")) || "blue"
   );
 
-  const activeTheme = THEMES[theme] || THEMES.blue;
+  const moodTheme = MOOD_THEMES[timeMood] || MOOD_THEMES.night;
+  const weatherMood = getWeatherMood(weatherCode);
+  const activeTheme = autoThemeEnabled
+    ? {
+        ...moodTheme,
+        accent: WEATHER_ACCENTS[weatherMood] || moodTheme.accent,
+      }
+    : THEMES[theme] || THEMES.blue;
 
   useEffect(() => {
     document.documentElement.style.setProperty("--accent", activeTheme.accent);
     document.documentElement.style.setProperty("--accent-10", `${activeTheme.accent}1A`);
     document.documentElement.style.setProperty("--accent-20", `${activeTheme.accent}33`);
     document.documentElement.style.setProperty("--bg", activeTheme.bg);
+  }, [activeTheme.accent, activeTheme.bg]);
+
+  useEffect(() => {
     localStorage.setItem("board_theme", JSON.stringify(theme));
-  }, [theme, activeTheme]);
+  }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem("board_auto_theme", String(autoThemeEnabled));
+  }, [autoThemeEnabled]);
+
+  useEffect(() => {
+    if (!autoThemeEnabled) return undefined;
+
+    const updateTimeMood = () => setTimeMood(getTimeMood());
+    updateTimeMood();
+    const interval = setInterval(updateTimeMood, 60 * 1000);
+    return () => clearInterval(interval);
+  }, [autoThemeEnabled]);
+
+  useEffect(() => {
+    if (!autoThemeEnabled || !weatherCoordinates) return undefined;
+
+    let cancelled = false;
+    const controller = new AbortController();
+    const loadWeather = async () => {
+      setWeatherStatus("loading");
+      try {
+        const params = new URLSearchParams({
+          latitude: String(weatherCoordinates.latitude),
+          longitude: String(weatherCoordinates.longitude),
+          current: "weather_code",
+          timezone: "auto",
+        });
+        const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`, {
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error("Weather request failed");
+
+        const data = await response.json();
+        if (!cancelled && Number.isFinite(data.current?.weather_code)) {
+          setWeatherCode(data.current.weather_code);
+          setWeatherStatus("ready");
+        } else if (!cancelled) {
+          setWeatherStatus("unavailable");
+        }
+      } catch {
+        if (!cancelled) {
+          setWeatherCode(null);
+          setWeatherStatus("unavailable");
+        }
+      }
+    };
+
+    loadWeather();
+    const interval = setInterval(loadWeather, 30 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      controller.abort();
+      clearInterval(interval);
+    };
+  }, [autoThemeEnabled, weatherCoordinates]);
+
+  const handleToggleAutoTheme = () => {
+    const nextEnabled = !autoThemeEnabled;
+    setAutoThemeEnabled(nextEnabled);
+    if (!nextEnabled) {
+      weatherRequestId.current += 1;
+      setWeatherCoordinates(null);
+      setWeatherCode(null);
+      setWeatherStatus("off");
+    }
+  };
+
+  const handleUseLocalWeather = () => {
+    if (!navigator.geolocation) {
+      setWeatherStatus("unavailable");
+      return;
+    }
+
+    setWeatherStatus("requesting");
+    const requestId = ++weatherRequestId.current;
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        if (requestId !== weatherRequestId.current) return;
+        setWeatherCoordinates({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+        });
+      },
+      () => {
+        if (requestId !== weatherRequestId.current) return;
+        setWeatherCode(null);
+        setWeatherStatus("unavailable");
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 30 * 60 * 1000 },
+    );
+  };
+
+  const handleSelectManualTheme = (name) => {
+    weatherRequestId.current += 1;
+    setTheme(name);
+    setAutoThemeEnabled(false);
+    setWeatherCoordinates(null);
+    setWeatherCode(null);
+    setWeatherStatus("off");
+  };
 
   const [searchHistory, setSearchHistory] = useState(() => {
     try {
@@ -444,7 +596,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[#090a0e] text-zinc-100 font-sans overflow-hidden">
+    <div className="flex flex-col h-screen bg-[var(--bg)] text-zinc-100 font-sans overflow-hidden">
       {/* Top Navbar */}
       <header className="flex flex-col md:flex-row items-stretch md:items-center justify-between px-4 py-2.5 bg-[#0b0c11] border-b border-zinc-800/80 gap-3 shrink-0 z-20">
         {/* Left: Brand & Stats */}
@@ -618,14 +770,62 @@ const Dashboard = () => {
               <button
                 key={name}
                 type="button"
-                onClick={() => setTheme(name)}
+                onClick={() => handleSelectManualTheme(name)}
                 style={{ backgroundColor: t.accent }}
                 title={`${t.name} theme`}
-                className={`w-3 h-3 rounded-full transition-transform ${theme === name ? "ring-2 ring-white scale-110" : "opacity-60 hover:opacity-100"
+                className={`w-3 h-3 rounded-full transition-transform ${!autoThemeEnabled && theme === name ? "ring-2 ring-white scale-110" : "opacity-60 hover:opacity-100"
                   }`}
               />
             ))}
           </div>
+
+          <button
+            type="button"
+            onClick={handleToggleAutoTheme}
+            aria-label={autoThemeEnabled ? "Disable automatic time-based theme" : "Enable automatic time-based theme"}
+            aria-pressed={autoThemeEnabled}
+            title={autoThemeEnabled ? `Auto theme: ${moodTheme.name}${weatherMood ? ` · ${weatherMood} weather` : " · time only"}` : "Automatically change the theme based on time of day"}
+            className={`p-1.5 rounded-lg border transition ${autoThemeEnabled
+              ? "border-[var(--accent)] bg-[var(--accent-10)] text-[var(--accent)]"
+              : "border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
+              }`}
+          >
+            <SparklesIcon className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={handleUseLocalWeather}
+            disabled={!autoThemeEnabled || weatherStatus === "requesting" || weatherStatus === "loading"}
+            aria-label="Use local weather in automatic theme"
+            title={!autoThemeEnabled
+              ? "Enable automatic theme first to use local weather"
+              : weatherStatus === "ready"
+                ? "Refresh weather theme using your approximate location"
+                : weatherStatus === "unavailable"
+                  ? "Weather unavailable. Click to retry, or keep using the time-based theme"
+                  : "Use current local weather (your approximate location is sent to Open-Meteo)"}
+            className={`p-1.5 rounded-lg border transition disabled:opacity-40 disabled:cursor-not-allowed ${weatherStatus === "ready"
+              ? "border-[var(--accent)] text-[var(--accent)]"
+              : "border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
+              }`}
+          >
+            <CloudIcon className="w-3.5 h-3.5" />
+          </button>
+
+          {weatherStatus === "ready" && (
+            <span className="text-[9px] text-zinc-500 whitespace-nowrap">
+              Weather by{" "}
+              <a
+                href="https://open-meteo.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 hover:text-zinc-300"
+              >
+                Open-Meteo
+              </a>
+            </span>
+          )}
 
           <div className="h-4 w-[1px] bg-zinc-800 hidden md:block" />
 
