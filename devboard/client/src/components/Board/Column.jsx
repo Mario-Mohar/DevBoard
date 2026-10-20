@@ -388,6 +388,41 @@ const Column = ({
                 {limit !== null ? `${columnCount}/${limit}` : tasks.length}
               </span>
 
+              {columnId === "done" && tasks.length > 0 && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const doneTasks = tasks;
+                    if (
+                      !window.confirm(
+                        `Clear all ${doneTasks.length} done tasks?`,
+                      )
+                    ) {
+                      return;
+                    }
+
+                    const results = await Promise.allSettled(
+                      doneTasks.map((task) => deleteTask(task._id)),
+                    );
+                    const clearedCount = results.filter(
+                      (result) => result.status === "fulfilled",
+                    ).length;
+
+                    if (clearedCount === doneTasks.length) {
+                      toast.success(`Cleared ${clearedCount} done tasks.`);
+                    } else {
+                      toast.error(
+                        `Cleared ${clearedCount} of ${doneTasks.length} done tasks.`,
+                      );
+                    }
+                  }}
+                  className="text-[10px] font-mono-code text-red-400/60 hover:text-red-400 transition"
+                  aria-label={`Clear all ${tasks.length} done tasks`}
+                >
+                  clear
+                </button>
+              )}
+
               {blockedCount > 0 && (
                 <span
                   title={`${blockedCount} blocked task${blockedCount === 1 ? "" : "s"}`}
