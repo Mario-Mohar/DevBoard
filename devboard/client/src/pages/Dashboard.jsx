@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import KanbanBoard from "../components/Board/KanbanBoard";
 import PomodoroTimer from "../components/Pomodoro/PomodoroTimer";
 import TaskModal from "../components/Task/TaskModal";
@@ -75,6 +75,23 @@ const Dashboard = () => {
     setActiveTag,
   } = useBoard();
   const { stars, loading: starsLoading } = useGithubStars();
+
+  const [countAnim, setCountAnim] = useState(false);
+  const prevCount = useRef(tasks.length);
+
+  useEffect(() => {
+    if (prevCount.current !== tasks.length) {
+      setCountAnim(true);
+
+      const timer = setTimeout(() => {
+        setCountAnim(false);
+      }, 400);
+
+      prevCount.current = tasks.length;
+
+      return () => clearTimeout(timer);
+    }
+  }, [tasks.length]);
 
   const handleSelectTask = async (task) => {
     setSelectedTask(task);
@@ -287,7 +304,8 @@ const Dashboard = () => {
 
           <div className="h-4 w-[1px] bg-zinc-800" />
 
-          <span className="text-xs font-mono-code text-zinc-400">
+          <span className={`inline-block text-xs font-mono-code transition-all duration-300 ${
+                  countAnim? "scale-125 text-purple-400": "text-zinc-400"}`}>
             {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
           </span>
           {lastVisit && (
