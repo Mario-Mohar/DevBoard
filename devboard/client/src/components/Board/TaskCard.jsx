@@ -21,6 +21,13 @@ import {
   SparklesIcon,
 } from "../common/Icons";
 
+// react-syntax-highlighter gives line numbers the "comment" class, so without
+// this they pick up the theme's green comment colour.
+const snippetTheme = {
+  ...vscDarkPlus,
+  linenumber: { color: "#52525b" },
+};
+
 const PRIORITY_BADGES = {
   high: {
     label: "P0 High",
@@ -101,6 +108,7 @@ const TaskCard = ({
   const [selectedSnippet, setSelectedSnippet] = useState(0);
   const [fontSize, setFontSize] = useState(11);
   const [wrapLines, setWrapLines] = useState(false);
+  const [showLineNumbers, setShowLineNumbers] = useState(false);
   const [copied, setCopied] = useState(false);
   const [contextMenu, setContextMenu] = useState(null);
   const cardRef = useRef(null);
@@ -466,6 +474,15 @@ const TaskCard = ({
                       </button>
                       <button
                         type="button"
+                        onClick={() => setShowLineNumbers((v) => !v)}
+                        aria-pressed={showLineNumbers}
+                        title={showLineNumbers ? "Hide line numbers" : "Show line numbers"}
+                        className={`px-1.5 py-0.5 rounded text-[9px] ${showLineNumbers ? "bg-zinc-800 text-zinc-200" : "text-zinc-500 hover:text-zinc-400"}`}
+                      >
+                        lines
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => {
                           const code = task.snippets[selectedSnippet]?.code || "";
                           navigator.clipboard.writeText(code);
@@ -479,8 +496,10 @@ const TaskCard = ({
                   <div className="max-h-48 overflow-auto text-[11px] font-mono-code">
                     <SyntaxHighlighter
                       language={task.snippets[selectedSnippet]?.language || "javascript"}
-                      style={vscDarkPlus}
+                      style={snippetTheme}
                       wrapLongLines={wrapLines}
+                      showLineNumbers={showLineNumbers}
+                      lineNumberStyle={{ minWidth: "2em", paddingRight: "1em", userSelect: "none" }}
                       customStyle={{
                         margin: 0,
                         padding: "8px 12px",
