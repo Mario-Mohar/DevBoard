@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { usePomodoro } from "../../hooks/usePomodoro";
 import { TimerIcon, PlayIcon, PauseIcon, ResetIcon } from "../common/Icons";
 
@@ -13,6 +13,13 @@ const PomodoroTimer = ({ activeTaskTitle, onSessionComplete }) => {
     format,
     progress,
   } = usePomodoro(onSessionComplete);
+  useEffect(() => {
+    if (isRunning) {
+      document.title = `${format(timeLeft)} — ${activeTaskTitle || "Pomodoro"} 🍅`;
+    } else {
+      document.title = "DevBoard 🗂️";
+    }
+  }, [isRunning, timeLeft, activeTaskTitle, format]);
 
   return (
     <div className="flex items-center justify-between gap-4 bg-[#101217] px-4 py-2 border-b border-zinc-800/80 text-xs select-none">
