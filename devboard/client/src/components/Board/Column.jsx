@@ -12,6 +12,7 @@ import {
 import confetti from "canvas-confetti";
 import { toast } from "react-toastify";
 import { columnLimit, countInColumn, roomInColumn } from "../../utils/columnLimits";
+import { useBoardZoom } from "../../utils/boardZoom";
 
 const COLUMN_CONFIG = {
   backlog: {
@@ -49,6 +50,7 @@ const Column = ({
   columns = [],
 }) => {
   const { tasks: allTasks, allTasks: unfilteredTasks, updateTask, deleteTask } = useBoard();
+  const zoom = useBoardZoom();
 
   const [sorted, setSorted] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
@@ -295,6 +297,7 @@ const Column = ({
   );
   return (
     <div
+      style={zoom !== 1 ? { zoom } : undefined}
       className={`flex flex-col w-full md:w-72 flex-shrink-0 transition-all ${isActive ? "ring-1 ring-blue-500/50" : ""
         }`}
     >
@@ -544,7 +547,12 @@ const Column = ({
               ))
             )}
 
-            {provided.placeholder}
+            {zoom !== 1 && (snapshot.isDraggingOver || snapshot.draggingFromThisWith) ? (
+              // The placeholder is sized in viewport pixels; undo the column zoom for it.
+              <div style={{ zoom: 1 / zoom }}>{provided.placeholder}</div>
+            ) : (
+              provided.placeholder
+            )}
 
             {!collapsed && (
               <button

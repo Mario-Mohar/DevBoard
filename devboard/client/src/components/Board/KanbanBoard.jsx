@@ -7,6 +7,7 @@ import confetti from "canvas-confetti";
 import { toast } from "react-toastify";
 import { columnLimit, isColumnFull } from "../../utils/columnLimits";
 import { LogoIcon, SearchIcon, PlusIcon, XIcon } from "../common/Icons";
+import { useBoardZoom } from "../../utils/boardZoom";
 
 const COLUMNS = ["backlog", "inprogress", "review", "done"];
 
@@ -18,6 +19,7 @@ const KanbanBoard = ({
   focusMode = false,
 }) => {
   const { tasks, allTasks, updateTask, addTask, loading } = useBoard();
+  const zoom = useBoardZoom();
   const displayedTasks = filteredTasks ?? tasks;
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -361,7 +363,10 @@ const KanbanBoard = ({
               ))}
 
               {/* Add Column Button */}
-              <div className="flex-shrink-0 w-72 hidden md:flex items-start">
+              <div
+                style={zoom !== 1 ? { zoom } : undefined}
+                className="flex-shrink-0 w-72 hidden md:flex items-start"
+              >
                 <button
                   type="button"
                   onClick={() => setShowinput(true)}
