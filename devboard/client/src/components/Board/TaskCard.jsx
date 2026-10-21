@@ -499,7 +499,26 @@ const TaskCard = ({
                       style={snippetTheme}
                       wrapLongLines={wrapLines}
                       showLineNumbers={showLineNumbers}
-                      lineNumberStyle={{ minWidth: "2em", paddingRight: "1em", userSelect: "none" }}
+                      // The theme sets white-space: pre and word-wrap: normal on the
+                      // code element, which overrides the pre-wrap that
+                      // wrapLongLines asks for and keeps long identifiers in one piece.
+                      codeTagProps={{
+                        style: {
+                          ...vscDarkPlus['code[class*="language-"]'],
+                          whiteSpace: wrapLines ? "pre-wrap" : "pre",
+                          overflowWrap: wrapLines ? "anywhere" : "normal",
+                          wordWrap: wrapLines ? "anywhere" : "normal",
+                        },
+                      }}
+                      lineNumberStyle={{ minWidth: "2em", paddingRight: "1em", textIndent: 0, userSelect: "none" }}
+                      // With wrapping and line numbers together the library makes
+                      // every line a flex row, which turns each token into its own
+                      // column. A hanging indent keeps wrapped text clear of the numbers.
+                      lineProps={
+                        wrapLines && showLineNumbers
+                          ? { style: { display: "block", paddingLeft: "3em", textIndent: "-3em" } }
+                          : undefined
+                      }
                       customStyle={{
                         margin: 0,
                         padding: "8px 12px",
