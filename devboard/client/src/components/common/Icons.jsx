@@ -124,6 +124,12 @@ export const SparklesIcon = ({ className = "w-4 h-4" }) => (
   </svg>
 );
 
+export const CloudIcon = ({ className = "w-4 h-4" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 16.2A4.5 4.5 0 0 0 18 7.7a6 6 0 0 0-11.7 1.6A4 4 0 0 0 7 17h12a3 3 0 0 0 1-5.8" />
+  </svg>
+);
+
 export const TargetIcon = ({ className = "w-4 h-4" }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10" />

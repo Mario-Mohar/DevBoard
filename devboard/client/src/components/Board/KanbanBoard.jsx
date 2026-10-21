@@ -308,7 +308,7 @@ const KanbanBoard = ({
       )}
 
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="board flex flex-col md:flex-row gap-4 p-5 overflow-x-hidden md:overflow-x-auto overflow-y-auto h-full min-h-[calc(100vh-140px)] bg-[#090a0e]">
+        <div className="board flex flex-col md:flex-row gap-4 p-5 overflow-x-hidden md:overflow-x-auto overflow-y-auto h-full min-h-[calc(100vh-140px)] bg-[var(--bg)]">
           {totalTasks === 0 && !loading ? (
             <div className="flex flex-col items-center justify-center w-full py-20 text-center my-auto">
               <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 flex items-center justify-center mb-4 shadow-lg shadow-blue-500/5">
