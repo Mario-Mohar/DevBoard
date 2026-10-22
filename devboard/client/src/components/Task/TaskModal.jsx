@@ -800,11 +800,15 @@ ${task.snippets
           <input
             type="text"
             maxLength={TAGS_MAX_LENGTH}
-            placeholder="Tags (comma separated: react, api, bug)"
+            placeholder="e.g. bug, frontend, api, auth"
             value={form.tags}
             onChange={(e) => setForm({ ...form, tags: e.target.value })}
             className="w-full bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]"
           />
+
+          <p className="mt-1 text-xs text-[var(--text-muted)]">
+            Separate tags with commas · Press Enter to add
+          </p>
 
           {tagSuggestions.length > 0 && (
             <div className="flex gap-1 flex-wrap -mt-1">
