@@ -844,6 +844,15 @@ ${task.snippets
           </div>
 
           {/* Existing Snippets */}
+          {(!task?.snippets || task.snippets.length === 0) && (
+            <div className="text-center py-6">
+              <div className="text-2xl mb-2">💻</div>
+              <p className="font-medium">No code snippets yet</p>
+              <p className="text-sm text-gray-500">
+                Add one below to attach code to this task
+              </p>
+            </div>
+          )}
           {task?.snippets?.length > 1 && (
             <div className="flex justify-end mb-2">
               <button
