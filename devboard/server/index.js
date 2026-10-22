@@ -61,7 +61,15 @@ app.use(
   }),
 );
 
-app.use(express.json());
+app.use(
+  express.json({
+    verify: (req, _res, body) => {
+      if (/\/github\/webhook\/?$/.test(req.path)) {
+        req.rawBody = Buffer.from(body);
+      }
+    },
+  }),
+);
 app.use(limiter);
 
 // Routes

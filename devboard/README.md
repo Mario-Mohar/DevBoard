@@ -56,6 +56,17 @@ npm run dev
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:5000
 
+### GitHub commit webhooks
+
+To create tasks automatically from commit messages, set `GITHUB_WEBHOOK_SECRET` in `server/.env` to the webhook secret configured in your GitHub repository. Then add a repository webhook under **Settings > Webhooks** with:
+
+- Payload URL: `https://<your-api-host>/api/v1/github/webhook`
+- Content type: `application/json`
+- Secret: the same value as `GITHUB_WEBHOOK_SECRET`
+- Events: **Just the push event**
+
+Include `#task` or `#todo` in a commit message to create a task; `#urgent` also creates one and marks it high priority. The marker is removed from the task title. Repeated deliveries of the same commit do not create duplicate tasks.
+
 ## 🤝 Contributing
 
 We love contributions! This project is beginner-friendly.

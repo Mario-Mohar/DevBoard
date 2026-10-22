@@ -31,6 +31,7 @@ const taskSchema = new mongoose.Schema(
     snippets: [snippetSchema],
     githubIssueUrl: { type: String, default: "" },
     githubIssueNumber: { type: Number },
+    githubCommitSha: { type: String, default: undefined },
     assignee: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     assigneeHistory: [
       {
@@ -72,6 +73,7 @@ const taskSchema = new mongoose.Schema(
 // GET /api/tasks returns every task sorted by order; without an index MongoDB
 // sorts the whole collection in memory on each board load.
 taskSchema.index({ order: 1 });
+taskSchema.index({ githubCommitSha: 1 }, { unique: true, sparse: true });
 
 // Normalize tags at the API boundary: trim whitespace, drop empties, dedupe.
 // Tags arrive from the modal, GitHub import, and AI suggestions — whitespace
