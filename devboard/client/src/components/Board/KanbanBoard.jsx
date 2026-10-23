@@ -13,6 +13,7 @@ const COLUMNS = ["backlog", "inprogress", "review", "done"];
 const KanbanBoard = ({
   tasks: filteredTasks,
   onSelectTask,
+  onTaskCompleted,
   activeCol,
   priorityFilter = "all",
   focusMode = false,
@@ -173,6 +174,7 @@ const KanbanBoard = ({
     ) {
       confetti({ particleCount: 70, spread: 60, origin: { y: 0.8 } });
       playDoneSound();
+      onTaskCompleted?.();
     }
 
     const sourceTasks = Array.from(getTasksByStatus(source.droppableId));
