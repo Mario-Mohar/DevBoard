@@ -47,12 +47,18 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// GET /api/auth/me — the signed-in user, including lastActive
-router.get("/me", protect, async (req, res) => {
+// PUT /api/auth/profile — update your own profile fields (webhookUrl powers outgoing webhooks)
+router.put("/profile", protect, async (req, res) => {
   try {
+    const { name, githubUsername, avatar, webhookUrl } = req.body;
     const user = await User.findById(req.user._id).select("-password");
     if (!user) return res.status(404).json({ message: "User not found" });
-    res.json({ ...user.toObject(), lastActive: user.lastActive });
+    if (typeof name === "string" && name.trim()) user.name = name.trim();
+    if (typeof githubUsername === "string") user.githubUsername = githubUsername.trim();
+    if (typeof avatar === "string") user.avatar = avatar;
+    if (typeof webhookUrl === "string") user.webhookUrl = webhookUrl.trim();
+    await user.save();
+    res.json({ ...user.toObject() });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
