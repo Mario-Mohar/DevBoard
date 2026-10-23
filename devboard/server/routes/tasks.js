@@ -3,6 +3,19 @@ const router = express.Router();
 const Task = require("../models/Task");
 const { protect } = require("../middleware/auth");
 
+/** Best-effort outgoing webhook POST (Zapier / n8n / custom tools). */
+const fireWebhook = async (url, payload) => {
+  try {
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    console.error("Webhook failed:", err.message);
+  }
+};
+
 // GET /api/tasks — get all tasks
 router.get("/", protect, async (req, res) => {
   try {
@@ -111,6 +124,15 @@ router.put("/:id", protect, async (req, res) => {
     // Broadcast so other open boards update without refresh
     const io = req.app.get("io");
     if (io) io.emit("task:updated", task);
+
+    // Outgoing webhook: never block the response on it
+    if (req.user.webhookUrl) {
+      fireWebhook(req.user.webhookUrl, {
+        event: "task.updated",
+        task,
+        timestamp: new Date().toISOString(),
+      });
+    }
 
     res.json(task);
   } catch (err) {

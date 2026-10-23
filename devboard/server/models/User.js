@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema(
     avatar: { type: String, default: "" },
     githubUsername: { type: String, default: "" },
     tokenVersion: { type: Number, default: 0 },
+    webhookUrl: { type: String, default: "" },
   },
   { timestamps: true }
 );
