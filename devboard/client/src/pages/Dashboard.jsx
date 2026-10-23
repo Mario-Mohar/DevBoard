@@ -38,6 +38,36 @@ const formatStars = (n) => {
 
 const CSV_HEADERS = ["Title", "Status", "Priority", "Tags", "Created"];
 
+const calculateStreak = () => {
+  try {
+    const history = JSON.parse(localStorage.getItem("completion_history") || "[]");
+    if (!Array.isArray(history)) return 0;
+
+    const completedDays = new Set(
+      history
+        .map((completion) => {
+          const date = new Date(completion);
+          return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10);
+        })
+        .filter(Boolean)
+    );
+    const today = new Date();
+    const todayKey = today.toISOString().slice(0, 10);
+    const yesterday = new Date(today);
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+    let date = completedDays.has(todayKey) ? today : yesterday;
+    let streak = 0;
+
+    while (completedDays.has(date.toISOString().slice(0, 10))) {
+      streak += 1;
+      date.setUTCDate(date.getUTCDate() - 1);
+    }
+    return streak;
+  } catch {
+    return 0;
+  }
+};
+
 const escapeCsvValue = (value) => {
   const text = value === null || value === undefined ? "" : String(value);
   const guarded = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
@@ -184,6 +214,19 @@ const Dashboard = () => {
     setActiveTag,
   } = useBoard();
   const { stars, loading: starsLoading } = useGithubStars();
+  const [streak, setStreak] = useState(calculateStreak);
+
+  const recordTaskCompletion = () => {
+    try {
+      const history = JSON.parse(localStorage.getItem("completion_history") || "[]");
+      const completions = Array.isArray(history) ? history : [];
+      completions.push(new Date().toISOString());
+      localStorage.setItem("completion_history", JSON.stringify(completions));
+      setStreak(calculateStreak());
+    } catch {
+      // Keep the dashboard usable when browser storage is unavailable.
+    }
+  };
 
   const [showWebhookSettings, setShowWebhookSettings] = useState(false);
   const [webhookUrl, setWebhookUrl] = useState("");
@@ -680,6 +723,7 @@ const Dashboard = () => {
               last visit {timeAgo(lastVisit)}
             </span>
           )}
+          {streak > 0 && <span className="text-xs font-mono-code text-orange-300">🔥 {streak} day streak</span>}
 
           {activeTag && (
             <button
@@ -944,7 +988,7 @@ const Dashboard = () => {
 
       {/* Main Kanban Workspace */}
       <main className="flex-1 overflow-hidden relative">
-        <KanbanBoard onSelectTask={setSelectedTask} focusMode={focusMode} />
+        <KanbanBoard onSelectTask={setSelectedTask} focusMode={focusMode} onTaskCompleted={recordTaskCompletion} />
       </main>
 
       {/* Edit Modal */}
@@ -1106,3 +1150,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
