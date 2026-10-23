@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const { protect } = require("../middleware/auth");
 
 const generateToken = (id, tokenVersion) =>
   jwt.sign({ id, tokenVersion }, process.env.JWT_SECRET, {
@@ -41,6 +42,17 @@ router.post("/login", async (req, res) => {
     } else {
       res.status(401).json({ message: "Invalid email or password" });
     }
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /api/auth/me — the signed-in user, including lastActive
+router.get("/me", protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json({ ...user.toObject(), lastActive: user.lastActive });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
