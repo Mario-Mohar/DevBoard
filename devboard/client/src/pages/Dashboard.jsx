@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import axios from "axios";
 import { toast } from "react-toastify";
 import KanbanBoard from "../components/Board/KanbanBoard";
 import PomodoroTimer from "../components/Pomodoro/PomodoroTimer";
@@ -24,6 +25,7 @@ import {
   CloudIcon,
   ChevronUpIcon,
   XIcon,
+  ExternalLinkIcon,
 } from "../components/common/Icons";
 import { openVisit, touchVisit } from "../utils/lastVisit";
 import { timeAgo } from "../utils/timeAgo";
@@ -182,6 +184,44 @@ const Dashboard = () => {
     setActiveTag,
   } = useBoard();
   const { stars, loading: starsLoading } = useGithubStars();
+
+  const [showWebhookSettings, setShowWebhookSettings] = useState(false);
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [webhookSaving, setWebhookSaving] = useState(false);
+  const [webhookLoaded, setWebhookLoaded] = useState(false);
+
+  const webhookHeaders = {
+    headers: { Authorization: user?.token ? `Bearer ${user.token}` : "" },
+  };
+
+  const openWebhookSettings = async () => {
+    setShowWebhookSettings(true);
+    if (!webhookLoaded) {
+      try {
+        const { data } = await axios.get("/api/v1/auth/me", webhookHeaders);
+        setWebhookUrl(data?.webhookUrl || "");
+      } catch {
+        // older server without GET /me: start with an empty input
+      }
+      setWebhookLoaded(true);
+    }
+  };
+
+  const handleSaveWebhook = async () => {
+    setWebhookSaving(true);
+    try {
+      await axios.put(
+        "/api/v1/auth/profile",
+        { webhookUrl: webhookUrl.trim() },
+        webhookHeaders
+      );
+      toast.success("Webhook URL saved");
+    } catch {
+      toast.error("Could not save the webhook URL");
+    } finally {
+      setWebhookSaving(false);
+    }
+  };
 
   const [countAnim, setCountAnim] = useState(false);
   const prevCount = useRef(tasks.length);
@@ -782,6 +822,16 @@ const Dashboard = () => {
             <KeyboardIcon className="w-3.5 h-3.5" />
           </button>
 
+          {/* Outgoing Webhook Settings */}
+          <button
+            type="button"
+            onClick={openWebhookSettings}
+            title="Outgoing webhook settings (Zapier / n8n)"
+            className="p-1.5 rounded-lg border border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 transition"
+          >
+            <ExternalLinkIcon className="w-3.5 h-3.5" />
+          </button>
+
           {/* Theme Palette Dots */}
           <div className="hidden lg:flex items-center gap-1 pl-1 border-l border-zinc-800">
             {Object.entries(THEMES).map(([name, t]) => (
@@ -941,6 +991,62 @@ const Dashboard = () => {
         >
           <ChevronUpIcon className="w-4 h-4" />
         </button>
+      )}
+
+      {/* Outgoing Webhook Settings Modal */}
+      {showWebhookSettings && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowWebhookSettings(false);
+          }}
+        >
+          <div className="bg-[#121319] border border-zinc-800 rounded-xl w-full max-w-sm shadow-2xl">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-800">
+              <div className="flex items-center gap-2">
+                <ExternalLinkIcon className="w-4 h-4 text-blue-400" />
+                <h3 className="font-semibold text-zinc-100 text-xs uppercase tracking-wider font-mono-code">
+                  Outgoing Webhook
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowWebhookSettings(false)}
+                className="text-zinc-500 hover:text-zinc-300"
+              >
+                <XIcon className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-5 flex flex-col gap-3">
+              <label
+                htmlFor="webhook-url"
+                className="text-xs text-zinc-400 font-mono-code"
+              >
+                Webhook URL
+              </label>
+              <input
+                id="webhook-url"
+                type="url"
+                placeholder="Webhook URL (optional)"
+                value={webhookUrl}
+                onChange={(e) => setWebhookUrl(e.target.value)}
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-blue-600 font-mono-code"
+              />
+              <p className="text-[10px] text-zinc-500 leading-relaxed font-mono-code">
+                DevBoard POSTs <span className="text-zinc-400">{"{ event, task, timestamp }"}</span> to this
+                URL when one of your tasks is updated. Use it with Zapier, n8n or
+                your own endpoint. Leave empty to turn it off.
+              </p>
+              <button
+                type="button"
+                onClick={handleSaveWebhook}
+                disabled={webhookSaving}
+                className="self-end text-xs font-medium text-white bg-blue-600 hover:bg-blue-500 active:bg-blue-700 px-3 py-1.5 rounded-lg shadow-sm shadow-blue-500/20 transition font-mono-code disabled:opacity-50"
+              >
+                {webhookSaving ? "Saving..." : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Keyboard Shortcuts Modal */}
