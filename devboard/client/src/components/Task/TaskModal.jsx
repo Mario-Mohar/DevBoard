@@ -69,6 +69,35 @@ const COLORS = [
 ];
 const EMOJIS = ["👍", "🔥", "😅", "💀", "✅"];
 
+const detectSmells=(code,language)=>{
+  if(!code || typeof code!=='string')return [];
+
+  const smells=[];
+  const langLower=language? String(language).toLowerCase():'';
+
+  if(code.includes('console.log')){
+    smells.push('🟡 console.log found — remove before PR');
+  }
+  if(code.includes('TODO') || code.includes('FIXME')){
+    smells.push('🔴 TODO/FIXME comment — resolve first');
+  }
+  if (/\bvar\s/.test(code) && (langLower === 'javascript' || langLower === 'js')) {
+    smells.push('🟡 var used — prefer const/let');
+  }
+  if (code.split('\n').length > 50) {
+    smells.push('🔴 Long function — consider splitting');
+  }
+  if (
+    code.includes('password') && !code.includes('hash') && !code.includes('bcrypt')){
+    smells.push('🔴 Possible plain-text password!');
+  }
+  if (code.includes('SELECT *')) {
+    smells.push('🟡 SELECT * — specify columns');
+  }
+
+  return smells;
+};
+
 const TaskModal = ({
   task,
   mode = "create",
@@ -178,7 +207,7 @@ const TaskModal = ({
     setForm({ ...form, tags: `${segments.filter(Boolean).join(", ")}, ` });
   };
 
-  const [snippetCode, setSnippetCode] = useState("");
+  const [snippetCode, setSnippetCode] = useState('');
   const [snippetLang, setSnippetLang] = useState("javascript");
   const [loading, setLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -967,7 +996,7 @@ ${task.snippets
 
 
           {/* Add Code Snippet */}
-          <div className="border border-[var(--border-primary)] rounded-lg overflow-hidden">
+          <div className="border border-[var(--border-primary)] rounded-lg ">
             <div className="flex items-center justify-between px-3 py-2 bg-[var(--bg-primary)] border-b border-[var(--border-primary)]">
               <span className="text-xs text-[var(--text-secondary)]">
                 {"</>"} Code Snippet
@@ -998,8 +1027,22 @@ ${task.snippets
               value={snippetCode}
               onChange={(e) => setSnippetCode(e.target.value)}
               rows={4}
-              className="w-full bg-[var(--bg-primary)] px-3 py-2 text-xs font-mono text-[var(--text-muted)] placeholder-[var(--text-muted)] focus:outline-none resize-none"
+              className="w-full bg-[var(--bg-primary)] px-3 py-2 text-xs font-mono text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none resize-none"
             />
+
+            {snippetCode && (
+              <div className="mt-2 space-y-1">
+                {detectSmells(snippetCode, snippetLang).map((smell, index) => (
+                <div
+                  key={index}
+                  className="text-xs font-mono text-amber-300 bg-amber-950/40 px-2.5 py-1 rounded border border-amber-800/50"
+                >
+                  {smell}
+                </div>
+                ))}
+              </div>
+            )}
+
           </div>
           <input
             type="date"
