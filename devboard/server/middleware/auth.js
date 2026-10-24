@@ -19,6 +19,14 @@ const protect = async (req, res, next) => {
       if (decoded.tokenVersion !== user.tokenVersion) {
         return res.status(401).json({ message: "Session expired" });
       }
+
+      // Record activity for this authenticated request so "active Xh ago" is possible
+      await User.findByIdAndUpdate(
+        decoded.id,
+        { lastActive: new Date() },
+        { timestamps: false }
+      );
+
       req.user = user;
       next();
 
