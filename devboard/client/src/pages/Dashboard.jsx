@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import KanbanBoard from "../components/Board/KanbanBoard";
@@ -26,6 +26,7 @@ import {
   ChevronUpIcon,
   XIcon,
   ExternalLinkIcon,
+  ActivityIcon,
 } from "../components/common/Icons";
 import { openVisit, touchVisit } from "../utils/lastVisit";
 import { timeAgo } from "../utils/timeAgo";
@@ -232,6 +233,53 @@ const Dashboard = () => {
   } = useBoard();
   const { stars, loading: starsLoading } = useGithubStars();
   const [streak, setStreak] = useState(calculateStreak);
+  const [showBurndown, setShowBurndown] = useState(false);
+
+  const burndownData = useMemo(() => {
+    const sprintStart = activeSprint?.startDate
+      ? new Date(activeSprint.startDate)
+      : new Date(Date.now() - 14 * 86400000);
+    const totalTasks = tasks.length;
+    const days = 14;
+    const maxY = Math.max(totalTasks, 1);
+    const W = 300;
+    const H = 100;
+    const pad = 10;
+    const innerW = W - pad * 2;
+    const innerH = H - pad * 2;
+
+    const idealLine = Array.from({ length: days }, (_, i) => ({
+      day: i + 1,
+      ideal: Math.round(totalTasks - (totalTasks / days) * i),
+    }));
+
+    const actualLine = idealLine.map(({ day }) => {
+      const date = new Date(sprintStart);
+      date.setDate(date.getDate() + day);
+      const remaining = tasks.filter((t) => {
+        if (t.status !== "done") return true;
+        const doneDate = new Date(t.updatedAt || t.createdAt || Date.now());
+        return doneDate > date;
+      }).length;
+      return { day, actual: remaining };
+    });
+
+    const idealPoints = idealLine
+      .map(
+        (d, i) =>
+          `${pad + (i / (days - 1)) * innerW},${pad + ((maxY - d.ideal) / maxY) * innerH}`
+      )
+      .join(" ");
+
+    const actualPoints = actualLine
+      .map(
+        (d, i) =>
+          `${pad + (i / (days - 1)) * innerW},${pad + ((maxY - d.actual) / maxY) * innerH}`
+      )
+      .join(" ");
+
+    return { idealPoints, actualPoints };
+  }, [tasks, activeSprint]);
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef(null);
   const listeningRef = useRef(false);
@@ -1008,6 +1056,21 @@ const Dashboard = () => {
             <KeyboardIcon className="w-3.5 h-3.5" />
           </button>
 
+          {/* Burndown Chart Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowBurndown((prev) => !prev)}
+            title="Toggle sprint burndown chart"
+            aria-label="Toggle sprint burndown chart"
+            className={`p-1.5 rounded-lg border transition ${
+              showBurndown
+                ? "border-purple-500/50 bg-purple-500/10 text-purple-400"
+                : "border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900"
+            }`}
+          >
+            <ActivityIcon className="w-3.5 h-3.5" />
+          </button>
+
           {/* Outgoing Webhook Settings */}
           <button
             type="button"
@@ -1112,6 +1175,61 @@ const Dashboard = () => {
           <span className="text-zinc-400">
             {daysRemaining} {daysRemaining === 1 ? "day" : "days"} remaining
           </span>
+          <button
+            type="button"
+            onClick={() => setShowBurndown((prev) => !prev)}
+            className="ml-auto text-[11px] text-zinc-400 hover:text-purple-300 underline"
+          >
+            {showBurndown ? "Hide burndown" : "View burndown"}
+          </button>
+        </div>
+      )}
+
+      {showBurndown && (
+        <div className="no-print px-4 py-3 bg-zinc-950/70 border-b border-zinc-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-zinc-200 uppercase tracking-wider font-mono-code">
+                Sprint Burndown
+              </span>
+              <span className="text-[11px] text-zinc-400">
+                ({tasks.filter((t) => t.status === "done").length}/{tasks.length} done)
+              </span>
+            </div>
+            <div className="flex items-center gap-3 text-[11px] text-zinc-400">
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-0.5 border-t border-dashed border-zinc-500 inline-block" />
+                Ideal
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-0.5 bg-purple-400 inline-block" />
+                Actual
+              </span>
+            </div>
+          </div>
+          <svg
+            width="300"
+            height="100"
+            className="border border-zinc-800/80 rounded-lg p-2 bg-zinc-900/50"
+            role="img"
+            aria-label="Sprint burndown chart"
+          >
+            {/* ideal line */}
+            <polyline
+              points={burndownData.idealPoints}
+              fill="none"
+              stroke="#71717a"
+              strokeWidth="1.5"
+              strokeDasharray="4 4"
+            />
+            {/* actual line */}
+            <polyline
+              points={burndownData.actualPoints}
+              fill="none"
+              stroke="#a855f7"
+              strokeWidth="2"
+            />
+          </svg>
         </div>
       )}
 
