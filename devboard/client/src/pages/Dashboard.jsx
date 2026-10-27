@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import KanbanBoard from "../components/Board/KanbanBoard";
@@ -971,6 +972,14 @@ const Dashboard = () => {
               <span>Star</span>
             )}
           </a>
+
+          {/* Analytics */}
+          <Link
+            to="/analytics"
+            className="flex items-center gap-1.5 text-xs font-medium text-zinc-300 hover:text-white bg-zinc-900/80 px-3 py-1.5 rounded-lg border border-zinc-800 transition"
+          >
+            Analytics
+          </Link>
 
           {/* Quick New Task Button */}
           <button
