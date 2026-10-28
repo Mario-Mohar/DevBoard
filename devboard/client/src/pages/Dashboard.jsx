@@ -30,6 +30,15 @@ import {
 } from "../components/common/Icons";
 import { openVisit, touchVisit } from "../utils/lastVisit";
 import { timeAgo } from "../utils/timeAgo";
+import {
+  BoardZoomContext,
+  ZOOM_MAX,
+  ZOOM_MIN,
+  ZOOM_STEP,
+  clampZoom,
+  readStoredZoom,
+  storeZoom,
+} from "../utils/boardZoom";
 
 const formatStars = (n) => {
   if (n === null || n === undefined) return null;
@@ -415,6 +424,25 @@ const Dashboard = () => {
     document.documentElement.style.setProperty("--accent-20", `${activeTheme.accent}33`);
     document.documentElement.style.setProperty("--bg", activeTheme.bg);
   }, [activeTheme.accent, activeTheme.bg]);
+
+  const [zoom, setZoom] = useState(readStoredZoom);
+  const changeZoom = (next) => {
+    const value = clampZoom(next);
+    setZoom(value);
+    storeZoom(value);
+  };
+  // The zoom control only shows from md up, where columns sit side by side.
+  // Below that the board stacks full-width columns, so it stays at 100%.
+  const [wideScreen, setWideScreen] = useState(
+    () => window.matchMedia("(min-width: 768px)").matches,
+  );
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 768px)");
+    const onChange = (e) => setWideScreen(e.matches);
+    query.addEventListener("change", onChange);
+    return () => query.removeEventListener("change", onChange);
+  }, []);
+  const boardZoom = wideScreen ? zoom : 1;
 
   useEffect(() => {
     localStorage.setItem("board_theme", JSON.stringify(theme));
@@ -1007,6 +1035,43 @@ const Dashboard = () => {
             <TargetIcon className="w-3.5 h-3.5" />
           </button>
 
+          {/* Board zoom */}
+          <div
+            className="hidden md:flex items-center rounded-lg border border-zinc-800 text-zinc-400 font-mono-code text-[10px]"
+            role="group"
+            aria-label="Board zoom"
+          >
+            <button
+              type="button"
+              onClick={() => changeZoom(zoom - ZOOM_STEP)}
+              disabled={zoom <= ZOOM_MIN}
+              title="Zoom out"
+              aria-label="Zoom out"
+              className="px-2 py-1 hover:text-zinc-200 hover:bg-zinc-900 rounded-l-lg transition disabled:opacity-40"
+            >
+              −
+            </button>
+            <button
+              type="button"
+              onClick={() => changeZoom(1)}
+              title="Reset zoom"
+              aria-label={`Zoom ${Math.round(zoom * 100)}%, reset to 100%`}
+              className="px-1.5 py-1 min-w-[3.25rem] hover:text-zinc-200 hover:bg-zinc-900 transition"
+            >
+              {Math.round(zoom * 100)}%
+            </button>
+            <button
+              type="button"
+              onClick={() => changeZoom(zoom + ZOOM_STEP)}
+              disabled={zoom >= ZOOM_MAX}
+              title="Zoom in"
+              aria-label="Zoom in"
+              className="px-2 py-1 hover:text-zinc-200 hover:bg-zinc-900 rounded-r-lg transition disabled:opacity-40"
+            >
+              +
+            </button>
+          </div>
+
           {/* CSV import and export */}
           <input
             ref={csvInputRef}
@@ -1248,7 +1313,9 @@ const Dashboard = () => {
 
       {/* Main Kanban Workspace */}
       <main className="flex-1 overflow-hidden relative">
-        <KanbanBoard onSelectTask={setSelectedTask} focusMode={focusMode} onTaskCompleted={recordTaskCompletion} />
+        <BoardZoomContext.Provider value={boardZoom}>
+          <KanbanBoard onSelectTask={setSelectedTask} focusMode={focusMode} onTaskCompleted={recordTaskCompletion} />
+        </BoardZoomContext.Provider>
       </main>
 
       {/* Edit Modal */}

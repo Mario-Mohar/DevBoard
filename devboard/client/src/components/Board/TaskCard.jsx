@@ -5,6 +5,7 @@ import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { useBoard } from "../../context/BoardContext";
 import { useSuggestTags } from "../../hooks/useSuggestTags";
 import { getAvatarColor } from "../../utils/avatarColor";
+import { unzoomDragStyle, useBoardZoom } from "../../utils/boardZoom";
 import { timeAgo } from "../../utils/timeAgo";
 import {
   CodeIcon,
@@ -239,6 +240,7 @@ const TaskCard = ({
   const isOverdue = dueDate && dueDate < today && task.status !== "done";
 
   const priorityMeta = PRIORITY_BADGES[task.priority?.toLowerCase()] || PRIORITY_BADGES.medium;
+  const zoom = useBoardZoom();
 
   return (
     <Draggable draggableId={String(task._id)} index={index}>
@@ -255,7 +257,7 @@ const TaskCard = ({
           }
           onContextMenu={handleContextMenu}
           style={{
-            ...provided.draggableProps.style,
+            ...unzoomDragStyle(provided.draggableProps.style, zoom),
             ...(task.labelColor
               ? { borderLeftColor: task.labelColor }
               : {}),
